@@ -1,0 +1,844 @@
+<title>Lookout</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Design: the seller's packing manifest. One sentence for the day, one line per broken order with a rubber-stamp state,
+   the phone beside it. Stamps are the one memorable thing; the console behind "Show how it works" stays quiet. */
+:root{
+  --bg:#EEF2F0; --panel:#FFFFFF; --ink:#13201B; --muted:#5B6964; --line:#D8E0DC; --soft:#F5F8F6;
+  --accent:#1D6B57; --accent-ink:#FFFFFF;
+  --find:#B86E00; --fix:#1D6B57; --ask:#2B5BA0; --block:#B23A2E;
+  --find-bg:#FFF3DF; --fix-bg:#E1F2EA; --ask-bg:#E4ECF8; --block-bg:#FBE6E3;
+  --wa-bg:#EFE8DE; --wa-in:#FFFFFF; --wa-out:#D7F8CF; --wa-bar:#1F5C4B;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","IBM Plex Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1311; --panel:#141C19; --ink:#E3EBE7; --muted:#93A29C; --line:#25302C; --soft:#18221F;
+  --accent:#58C2A1; --accent-ink:#06120E;
+  --find:#F0A940; --fix:#5CC9A4; --ask:#86ABEC; --block:#F1786A;
+  --find-bg:#33260F; --fix-bg:#12302A; --ask-bg:#172540; --block-bg:#3A1A16;
+  --wa-bg:#0B141A; --wa-in:#1F2C33; --wa-out:#144D37; --wa-bar:#1F2C33; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1311; --panel:#141C19; --ink:#E3EBE7; --muted:#93A29C; --line:#25302C; --soft:#18221F;
+  --accent:#58C2A1; --accent-ink:#06120E;
+  --find:#F0A940; --fix:#5CC9A4; --ask:#86ABEC; --block:#F1786A;
+  --find-bg:#33260F; --fix-bg:#12302A; --ask-bg:#172540; --block-bg:#3A1A16;
+  --wa-bg:#0B141A; --wa-in:#1F2C33; --wa-out:#144D37; --wa-bar:#1F2C33; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 28px}
+.wrap{max-width:1480px;margin:0 auto;display:grid;gap:12px}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,.inc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.kr{font-family:"IBM Plex Sans KR",var(--f-body)}
+.muted{color:var(--muted)}
+
+/* top bar */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand b{font-family:var(--f-display);font-stretch:80%;font-weight:800;font-size:26px;letter-spacing:-.01em}
+.brand .pitch{display:grid;gap:1px;font-size:14px;font-weight:500;min-width:0}
+.brand .pitch span{color:var(--muted);font-size:12px;font-weight:400}
+.clock{display:flex;align-items:center;gap:12px;margin-left:auto}
+.clock .t{font-family:var(--f-display);font-stretch:75%;font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.clock .d{font-size:12px;color:var(--muted);line-height:1.3}
+.btn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:8px 12px;font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;padding:8px 16px}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.day{grid-column:1/-1;position:relative;height:26px;margin-top:2px}
+.day .rail{position:absolute;left:0;right:0;top:12px;height:2px;background:var(--line)}
+.day .done{position:absolute;left:0;top:12px;height:2px;background:var(--accent)}
+.day .tick{position:absolute;top:6px;width:3px;height:14px;border-radius:2px}
+.day .lbl{position:absolute;top:16px;font-size:10px;color:var(--muted);transform:translateX(-50%)}
+.top .day{flex-basis:100%}
+
+/* how-it-works band */
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.flow .st{padding:10px 14px 12px;border-right:1px solid var(--line);position:relative;min-width:0}
+.flow .st:last-child{border-right:0}
+.flow .st:not(:last-child)::after{content:"";position:absolute;right:-7px;top:50%;width:12px;height:12px;background:var(--panel);border-top:1px solid var(--line);border-right:1px solid var(--line);transform:translateY(-50%) rotate(45deg);z-index:1}
+.flow .n{font-size:12px;font-weight:700}
+.flow .m{font-weight:600;margin-top:2px}
+.flow .w{font-size:12px;color:var(--muted)}
+.flow .v{font-family:var(--f-mono);font-size:12.5px;margin-top:6px;font-variant-numeric:tabular-nums}
+.trace{border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:300px}
+.trace h4{margin:0;padding:8px 10px;font-size:13px;border-bottom:1px solid var(--line);background:var(--soft);position:sticky;top:0}
+button.ord{background:var(--panel);color:inherit;cursor:pointer}
+button.ord[aria-pressed="true"]{border-color:var(--ink);background:var(--soft)}
+
+/* main grid */
+.main{display:grid;grid-template-columns:300px minmax(0,1fr) 340px;gap:12px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.ph h2{margin:0;font-family:var(--f-display);font-stretch:85%;font-size:17px;font-weight:700}
+.ph .muted{font-size:12px}
+
+.incs{display:grid;gap:0;max-height:640px;overflow:auto}
+.inc{display:grid;grid-template-columns:4px 1fr;gap:10px;padding:10px 14px 10px 10px;border-bottom:1px solid var(--line);background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:inherit;width:100%}
+.inc:hover{background:var(--soft)}
+.inc[aria-current="true"]{background:var(--soft)}
+.inc .bar{border-radius:2px}
+.inc .row1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.inc .title{font-weight:600}
+.inc .meta{font-size:12px;color:var(--muted)}
+.empty{padding:22px 14px;color:var(--muted)}
+
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill.find{background:var(--find-bg);color:var(--find)}
+.pill.fix{background:var(--fix-bg);color:var(--fix)}
+.pill.ask{background:var(--ask-bg);color:var(--ask)}
+.pill.block{background:var(--block-bg);color:var(--block)}
+.pill.plain{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+
+.center{display:grid;gap:12px;min-width:0}
+.detail{padding:14px 16px;display:grid;gap:14px}
+.detail h3{margin:0;font-family:var(--f-display);font-stretch:85%;font-size:22px;font-weight:700;text-wrap:balance}
+.cause{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.cause dt{color:var(--muted)}
+.cause dd{margin:0;min-width:0}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.step{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--soft)}
+.step .n{font-size:12px;font-weight:700}
+.step.find .n{color:var(--find)} .step.fix .n{color:var(--fix)} .step.ask .n{color:var(--ask)}
+.step p{margin:2px 0 0;font-size:12.5px}
+.actions{display:grid;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.act{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:start;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px}
+.act:last-child{border-bottom:0}
+.act .at{color:var(--muted);font-size:12px}
+.btn.mini{padding:2px 8px;font-size:11px;border-radius:6px}
+.act .what{min-width:0}
+.act .key{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.act .msg{margin-top:4px;padding:6px 8px;border-radius:6px;background:var(--soft);font-size:12.5px}
+.act .msg .en{color:var(--muted);font-size:12px;margin-top:2px}
+.doc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.doc .paper{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--soft);font-size:12.5px}
+.doc .paper h4{margin:0 0 6px;font-size:13px}
+.doc pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--f-mono);font-size:11.5px}
+.orders{display:flex;flex-wrap:wrap;gap:6px}
+.ord{border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:12px;display:inline-flex;gap:6px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+.ledger .filters{display:flex;gap:6px;flex-wrap:wrap}
+.ledger .chip{border:1px solid var(--line);background:var(--soft);color:var(--muted);border-radius:999px;padding:2px 9px;font-size:12px}
+.ledger .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ltable{max-height:330px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:5px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{position:sticky;top:0;background:var(--panel);font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+td.num{text-align:right;white-space:nowrap}
+.actor{font-weight:600}
+.actor.glimmer{color:var(--find)} .actor.spark{color:var(--fix)} .actor.voice,.actor.seller{color:var(--ask)} .actor.policy{color:var(--block)} .actor.executor{color:var(--ink)}
+
+/* phone */
+.phone{border:10px solid #10161A;border-radius:34px;background:var(--wa-bg);overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;height:720px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.wa-top{background:var(--wa-bar);color:#fff;padding:12px 14px 10px;display:flex;gap:10px;align-items:center}
+.wa-top .av{width:32px;height:32px;border-radius:50%;background:#2E8C70;display:grid;place-items:center;font-family:var(--f-display);font-weight:800}
+.wa-top b{display:block;font-size:14px}
+.wa-top small{opacity:.75;font-size:11px}
+.wa-feed{overflow:auto;padding:10px 10px 4px;display:flex;flex-direction:column;gap:6px}
+.bub{max-width:88%;padding:6px 9px 4px;border-radius:9px;font-size:13px;box-shadow:0 1px 0 rgba(0,0,0,.08);color:var(--ink)}
+.bub.in{background:var(--wa-in);align-self:flex-start;border-top-left-radius:2px}
+.bub.out{background:var(--wa-out);align-self:flex-end;border-top-right-radius:2px}
+.bub .en{color:var(--muted);font-size:11.5px;margin-top:3px}
+.bub .tm{font-size:10px;color:var(--muted);text-align:right;margin-top:2px}
+.bub .q{display:grid;gap:5px;margin-top:6px}
+.bub .qi{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:5px;font-size:12.5px}
+.bub .qb{display:flex;gap:4px}
+.bub .qb button{border:1px solid var(--line);background:var(--soft);color:var(--ask);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.bub .wave{display:flex;align-items:center;gap:2px;height:22px}
+.bub .wave i{display:block;width:3px;border-radius:2px;background:var(--ask)}
+.wa-in{display:flex;gap:6px;padding:8px;background:var(--wa-bg);border-top:1px solid var(--line)}
+.wa-in input{flex:1;min-width:0;border:1px solid var(--line);border-radius:18px;padding:8px 12px;background:var(--wa-in);color:var(--ink);font:inherit;font-size:13px}
+.wa-in button{width:38px;height:38px;border-radius:50%;border:0;background:#1F8F6E;color:#fff;display:grid;place-items:center;flex:none}
+.foot{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between}
+.banner{background:var(--ask-bg);color:var(--ask);border-radius:8px;padding:8px 12px;font-size:13px}
+/* simple view is the default; .tech parts appear only after "Show how it works" */
+body:not(.tech-on) .tech{display:none!important}
+body.tech-on .simple{display:none!important}
+body:not(.tech-on) .main{grid-template-columns:minmax(0,1fr) 340px}
+.hero{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px 26px 20px;display:grid;gap:10px}
+.hero .line{font-family:var(--f-display);font-stretch:82%;font-weight:600;font-size:clamp(26px,3.2vw,44px);line-height:1.12;letter-spacing:-.01em;text-wrap:balance;max-width:28ch}
+.hero .line .n{font-weight:800;font-size:1.45em;line-height:1;font-variant-numeric:tabular-nums;vertical-align:-.06em}
+.hero .n.find{color:var(--find)} .hero .n.fix{color:var(--fix)} .hero .n.ask{color:var(--ask)}
+.hero .sub{font-size:15px;color:var(--muted);max-width:70ch}
+.hero .sub b{color:var(--ink);font-weight:600}
+/* rubber stamp: the state of each order, pressed on when it changes */
+.stamp{display:inline-block;border:2.5px solid currentColor;border-radius:5px;padding:3px 9px 2px;font-family:var(--f-display);font-stretch:80%;font-weight:800;font-size:13px;letter-spacing:.09em;text-transform:uppercase;line-height:1.2;transform:rotate(-4deg);opacity:.88;white-space:nowrap}
+.stamp.fix{color:var(--fix)} .stamp.ask{color:var(--ask)} .stamp.find{color:var(--find)} .stamp.block{color:var(--block)}
+.stamp.press{animation:press .42s cubic-bezier(.2,.9,.3,1.25) both}
+@keyframes press{from{transform:rotate(-14deg) scale(1.9);opacity:0}70%{opacity:.95}to{transform:rotate(-4deg) scale(1);opacity:.88}}
+@media (prefers-reduced-motion:reduce){.stamp.press{animation:none}}
+.viewbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.trow{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;padding:14px 16px;border:0;border-bottom:1px solid var(--line);border-left:4px solid transparent;background:none;color:inherit;text-align:left}
+.trow:hover{background:var(--soft)}
+.trow .tm{color:var(--muted);font-size:13px}
+.trow b{display:block;font-size:16px}
+.trow span.d{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+.trow.wait{border-left-color:var(--ask);background:var(--ask-bg)}
+.trow .stamp{justify-self:end}
+
+@media (max-width:1180px){
+  .main{grid-template-columns:minmax(0,1fr) 340px}
+  .left{grid-column:1/-1}
+  .incs{max-height:260px}
+  .flow{grid-template-columns:repeat(2,minmax(0,1fr))} .flow .st::after{display:none} .flow .st{border-bottom:1px solid var(--line)}
+}
+@media (max-width:760px){
+  .main,body:not(.tech-on) .main{grid-template-columns:minmax(0,1fr)}
+  .hero{padding:16px 16px 14px} .hero .line{font-size:26px;max-width:none}
+  .trow{grid-template-columns:44px minmax(0,1fr)} .trow .stamp{grid-column:2;justify-self:start;margin-top:4px}
+  .simple{order:1}
+  .flow{grid-template-columns:minmax(0,1fr)}   .left{order:1} .phone-wrap{order:2} .center{order:3}
+  .steps,.doc{grid-template-columns:minmax(0,1fr)}
+  .clock{margin-left:0}
+  .phone{height:600px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><b>Lookout</b><div class="pitch"><div>Finds, fixes and asks about broken orders before customers notice.</div><span>Demo store: Southern Pantry · imports from Australia · Naver Smart Store + Shopify</span></div></div>
+    <div class="clock">
+      <div><div class="d" id="dayLbl">Scenario clock</div><div class="d" id="modeLbl">Paused</div></div>
+      <div class="t" id="clock">09:00</div>
+    </div>
+    <div class="ctrls">
+      <button class="btn primary" id="run">Run 24h</button>
+      <button class="btn" id="pause">Pause</button>
+      <button class="btn" id="speed" aria-pressed="false" title="Play at 4× speed">4×</button>
+    </div>
+    <div class="day" id="day"></div>
+  </header>
+
+  <section class="hero" id="hero" aria-label="Today at a glance"></section>
+  <div class="banner" id="banner" hidden></div>
+  <div class="viewbar"><span class="muted" id="viewHint"></span><button class="btn" id="techBtn" aria-pressed="false">Show how it works</button></div>
+  <section class="flow tech" id="flow" aria-label="How Lookout works"></section>
+
+  <div class="main">
+    <section class="panel simple" aria-label="Today">
+      <div class="ph"><h2>Today</h2><span class="muted">What broke, and what Lookout did about it</span></div>
+      <div id="today"></div>
+    </section>
+    <section class="panel left tech" aria-label="Order exceptions">
+      <div class="ph"><h2>Order exceptions</h2><span class="muted" id="incCount"></span></div>
+      <div class="incs" id="incs"></div>
+    </section>
+
+    <div class="center tech">
+      <section class="panel" aria-label="Exception detail"><div class="detail" id="detail"></div></section>
+      <section class="panel ledger" aria-label="Run ledger">
+        <div class="ph"><h2>Run ledger</h2>
+          <div class="filters" id="filters"></div></div>
+        <div class="ltable"><table><thead><tr><th>Time</th><th>Actor</th><th>Kind</th><th>Detail</th><th class="num">Tokens</th><th class="num">Cost</th><th class="num">ms</th></tr></thead><tbody id="ledger"></tbody></table></div>
+      </section>
+    </div>
+
+    <section class="phone-wrap" aria-label="Seller's WhatsApp">
+      <div class="phone">
+        <div class="wa-top"><div class="av">L</div><div><b>Lookout</b><small>WhatsApp · seller's phone</small></div></div>
+        <div class="wa-feed" id="feed" aria-live="polite"></div>
+        <form class="wa-in" id="voiceForm">
+          <label for="voiceText" hidden>Voice note transcript</label>
+          <input id="voiceText" value="환불은 1번이랑 2번만, 재발송은 해" aria-label="Voice note (spoken to Lookout)">
+          <button type="submit" title="Send voice note" aria-label="Send voice note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3" fill="none"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <span>Demo build. Models and channel adapters run in this page from a fixed seed: Muse Glimmer triage, Muse Spark 1.3 plans and document reads, Voice Transcribe. Costs use Spark list prices ($1.25 / $4.25 per 1M tokens). All stores, customers and orders are synthetic.</span>
+    <span id="selftest" class="mono"></span>
+  </footer>
+</div>
+
+<script>
+// ---------- engine: scenario, Find (sentinel), Fix (resolver + executor), Ask (policy + approvals) ----------
+const DAY0 = 540, MS_PER_MIN = 90000 / 1440; // 24h in 90s
+const fmt = m => { m = Math.floor(m) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+const won = n => '₩' + n.toLocaleString('en-US');
+const MONEY = new Set(['refund', 'reship', 'compensate', 'price_change']);
+const HEALTH = /효능|치료|면역|질병|약효|\bcure|\btreat|immun/i;
+const PRICE = { in: 1.25e-6, out: 4.25e-6 };
+const COST_CAP = 1.0;
+
+// Policy gate (spec §4): money → approval, listing → approval, health claims → blocked, everything else in the playbook → auto.
+function gate(a) {
+  if (HEALTH.test((a.kr || '') + ' ' + (a.en || ''))) return { d: 'blocked', why: 'rule 3: health or efficacy wording' };
+  if (MONEY.has(a.type)) return { d: 'approval', why: 'rule 1: money leaves the store' };
+  if (a.type === 'publish_listing') return { d: 'approval', why: 'rule 2: listing goes public' };
+  return { d: 'auto', why: 'rule 2: playbook action, logged' };
+}
+
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+const SKU = {
+  'HONEY-250': 'Manuka honey 250g', 'BEANIE-M': 'Merino beanie M', 'SOCK-M': 'Merino socks M', 'SOAP-3': 'Eucalyptus soap ×3', 'TEA-TOWEL': 'Linen tea towel', 'MAC-500': 'Macadamia 500g'
+};
+const CUSTOMS_ORDERS = ['1051','1052','1053','1054','1055','1056','1057','1058','1059','1060','1061','1062','1063','1064'];
+const SPLIT = new Set(['1052','1056','1057','1059','1062','1064']);
+const PCCC_BAD = ['1053','1058','1061'];
+const CANCEL = [['1055', 38000, 864], ['1060', 52000, 869], ['1063', 29500, 873]];
+
+function createEngine() {
+  const S = { t: DAY0, q: [], seq: 0, ledger: [], incs: [], orders: {}, inv: {}, wa: [], approvals: [], idem: new Set(), cost: 0, glimmer: 0, spark: 0, docs: [], voiced: false, selected: null, n: 0 };
+  const rng = mulberry(20261028);
+  const at = (m, fn) => { S.q.push({ m, s: S.seq++, fn }); S.q.sort((a, b) => a.m - b.m || a.s - b.s); };
+  const log = (actor, kind, detail, x = {}) => S.ledger.push({ id: S.ledger.length + 1, at: S.t, actor, kind, detail, tokens: x.tokens || '', cost: x.cost || 0, ms: x.ms || '' });
+
+  // stores: inventory per channel, pre-existing orders stuck in customs or in transit
+  S.inv = { naver: { 'BEANIE-M': 0, 'HONEY-250': 40, 'SOCK-M': 30, 'SOAP-3': 25, 'TEA-TOWEL': 18 }, shopify: { 'BEANIE-M': 2, 'HONEY-250': 40, 'SOCK-M': 30, 'SOAP-3': 25, 'TEA-TOWEL': 18 } };
+  CUSTOMS_ORDERS.forEach((id, i) => {
+    S.orders[id] = { id, channel: i % 2 ? 'naver' : 'shopify', status: 'in_customs', items: SPLIT.has(id) ? ['HONEY-250', i % 3 ? 'SOCK-M' : 'SOAP-3'] : ['HONEY-250'], pccc: PCCC_BAD.includes(id) ? 'P1234567890' : 'P' + (5550000000000 + i) };
+  });
+  S.orders['1017'] = { id: '1017', channel: 'shopify', status: 'shipped', items: ['SOAP-3', 'TEA-TOWEL'], tracking: 'CJ 6841-2219-0457', value: 24000 };
+
+  // Spark call with cost cap (spec rule 5). Simulated latency is deterministic.
+  function spark(kind, detail, tin, tout) {
+    const c = tin * PRICE.in + tout * PRICE.out;
+    if (S.cost + c > COST_CAP) { log('policy', 'cost_cap', `Spark call skipped: daily cap $${COST_CAP.toFixed(2)} reached`); return false; }
+    S.cost += c; S.spark++;
+    log('spark', kind, detail, { tokens: `${tin.toLocaleString()} / ${tout.toLocaleString()}`, cost: c, ms: Math.round(700 + tin / 40 + tout * 0.9) });
+    return true;
+  }
+  function glimmer(ev, verdict, reason) {
+    S.glimmer++;
+    log('glimmer', 'triage', `${ev.src}:${ev.kind}${ev.p?.id || ev.p?.order ? ' #' + (ev.p.id || ev.p.order) : ''} → ${verdict} · ${reason}`, { ms: Math.round(35 + rng() * 80) });
+  }
+
+  // ---- Find: sentinel. Reads the event and the store state, returns a verdict with a one-line reason.
+  function triage(ev) {
+    const p = ev.p || {};
+    if (ev.kind === 'order_created') {
+      if (p.apartment && !/\d+\s*동/.test(p.address)) return ['exception:address', 'apartment address has no building/unit number'];
+      const ch = S.inv[p.channel];
+      const out = p.items.find(s => ch[s] === 0);
+      if (out) return ['exception:stock', `${out} is 0 on ${p.channel}; ${S.inv[p.channel === 'naver' ? 'shopify' : 'naver'][out]} on the other channel`];
+      return ['normal', 'valid address, stock available'];
+    }
+    if (ev.kind === 'customs_notice') return ['exception:customs', 'customs hold notice attached (PDF)'];
+    if (ev.kind === 'tracking_update') return p.stalledDays >= 3 ? ['exception:carrier', `no scan for ${p.stalledDays} days`] : ['normal', 'moving'];
+    if (ev.kind === 'customer_message') {
+      if (p.intent === 'cancel') return ['exception:cancel', 'customer asks to cancel'];
+      if (p.replyTo) return ['reply', `answer to open exception on #${p.order}`];
+      return ['normal', 'general question, left for the seller'];
+    }
+    if (ev.kind === 'seller_message') return ['seller', 'instruction from seller'];
+    return ['ignore', 'not order related'];
+  }
+
+  function ingest(ev) {
+    const [v, why] = triage(ev), before = S.spark;
+    glimmer(ev, v, why);
+    if (v === 'exception:address') onAddress(ev);
+    else if (v === 'exception:stock') onStock(ev);
+    else if (v === 'exception:customs') onCustoms(ev);
+    else if (v === 'exception:carrier') onCarrier(ev);
+    else if (v === 'exception:cancel') onCancel(ev);
+    else if (v === 'reply') onReply(ev);
+    else if (ev.kind === 'order_created') S.orders[ev.p.id] = { id: ev.p.id, channel: ev.p.channel, status: 'ready', items: ev.p.items };
+    if (v === 'normal') { S.normals = (S.normals || 0) + 1; if (S.spark !== before) S.normalSpark = (S.normalSpark || 0) + 1; }
+  }
+
+  // ---- Fix: executor with idempotency keys and postcondition checks
+  function newInc(type, title, orderIds, extra = {}) {
+    const inc = { id: 'X' + (S.incs.length + 1), type, title, opened: S.t, orders: orderIds.map(id => ({ id, status: 'fixing', opened: S.t, notified: null })), actions: [], ...extra };
+    S.incs.push(inc); if (!S.userPicked) S.selected = inc.id; return inc;
+  }
+  function act(inc, a) {
+    a.id = inc.id + '.' + (inc.actions.length + 1);
+    a.key = a.key || `${a.type}:${inc.id}:${a.order || '-'}`;
+    const g = gate(a);
+    a.decision = g.d; a.at = S.t; inc.actions.push(a);
+    log('policy', 'gate', `${a.type} ${a.order ? '#' + a.order : ''} → ${g.d} (${g.why})`);
+    if (g.d === 'auto') run(inc, a);
+    else if (g.d === 'approval') {
+      a.state = 'pending'; setOrder(inc, a.order, 'waiting');
+      // refunds are numbered as they arrive so the seller can say "1번, 2번"
+      S.approvals.push({ n: a.type === 'refund' ? S.approvals.filter(x => x.n).length + 1 : 0, inc: inc.id, action: a.id, state: 'pending' });
+    }
+    else { a.state = 'blocked'; log('policy', 'escalate', `blocked ${a.type}; handed to seller`); }
+    return a;
+  }
+  function run(inc, a) {
+    if (S.idem.has(a.key)) { a.dupes = (a.dupes || 0) + 1; log('executor', 'skip_duplicate', `idempotency key ${a.key} already executed; refused`); return false; }
+    S.idem.add(a.key);
+    apply(a);
+    const ok = verify(a);
+    a.state = ok ? 'done' : 'unknown'; a.doneAt = S.t;
+    log('executor', ok ? 'execute' : 'unknown', `${a.type} ${a.order ? '#' + a.order : ''} · ${a.label}${ok ? ' · verified' : ' · UNKNOWN, not retried'}`, { ms: Math.round(180 + rng() * 300) });
+    if (a.type === 'message_customer') { const o = inc.orders.find(o => o.id === a.order); if (o && !o.notified) o.notified = S.t; }
+    if (a.fixes) setOrder(inc, a.order, 'fixed');
+    return ok;
+  }
+  function apply(a) {
+    const o = S.orders[a.order];
+    switch (a.type) {
+      case 'hold': o.status = 'held'; break;
+      case 'release': o.status = 'ready'; break;
+      case 'update_order': Object.assign(o, a.patch); break;
+      case 'reallocate_stock': S.inv[a.from][a.sku] -= 1; S.inv[a.to][a.sku] += 1; o.status = 'ready'; break;
+      case 'set_listing_qty': S.inv[a.channel][a.sku] = a.qty; break;
+      case 'split_shipment': o.split = true; o.status = 'partial_shipped'; break;
+      case 'draft_document': S.docs.push(a.label); break;
+      case 'refund': o.status = 'refunded'; o.refund = a.amount; break;
+      case 'reship': S.orders[a.order + '-R'] = { id: a.order + '-R', channel: o.channel, status: 'ready', items: o.items }; break;
+      default: break; // message_customer, carrier_inquiry, track: recorded in the ledger
+    }
+  }
+  function verify(a) {
+    const o = S.orders[a.order];
+    switch (a.type) {
+      case 'hold': return o.status === 'held';
+      case 'release': case 'reallocate_stock': return o.status === 'ready';
+      case 'update_order': return Object.entries(a.patch).every(([k, v]) => o[k] === v);
+      case 'set_listing_qty': return S.inv[a.channel][a.sku] === a.qty;
+      case 'split_shipment': return o.split === true;
+      case 'refund': return o.status === 'refunded';
+      case 'reship': return !!S.orders[a.order + '-R'];
+      default: return true;
+    }
+  }
+  function setOrder(inc, id, st) { const o = inc.orders.find(o => o.id === id); if (o) o.status = st; }
+
+  // ---- Fix playbooks (Resolver output, spec §4)
+  function onAddress(ev) {
+    const p = ev.p; S.orders[p.id] = { id: p.id, channel: p.channel, status: 'ready', items: p.items, address: p.address };
+    const inc = newInc('address', `Address missing unit · #${p.id}`, [p.id], { cause: `Shopify order, apartment address without 동·호수: ${p.address}` });
+    spark('plan', `Resolver plan for ${inc.id} (address): hold → ask customer → patch → release`, 1800, 350);
+    act(inc, { type: 'hold', order: p.id, label: 'Hold shipment' });
+    at(S.t + 1, () => act(inc, { type: 'message_customer', order: p.id, label: 'Ask customer for building/unit number',
+      kr: `[서던팬트리] 주문 #${p.id} 배송지에 동·호수가 없어 출고를 잠시 멈췄어요. 이 메시지에 동·호수를 답장해 주시면 바로 보내 드릴게요.`,
+      en: `Your address for #${p.id} is missing the building/unit number, so we paused shipping. Reply with it and we'll ship right away.` }));
+  }
+  function onStock(ev) {
+    const p = ev.p; S.orders[p.id] = { id: p.id, channel: p.channel, status: 'held', items: p.items };
+    const sku = 'BEANIE-M';
+    const inc = newInc('stock', `Out of stock on Naver · ${p.id}`, [p.id], { cause: `${SKU[sku]} is 0 on Naver Smart Store, 2 on Shopify` });
+    spark('plan', `Resolver plan for ${inc.id} (stock): move 1 unit Shopify → Naver, set Shopify listing to 1`, 1600, 300);
+    act(inc, { type: 'reallocate_stock', order: p.id, sku, from: 'shopify', to: 'naver', label: 'Move 1 unit from Shopify to Naver allocation' });
+    at(S.t + 1, () => act(inc, { type: 'set_listing_qty', order: p.id, channel: 'shopify', sku, qty: 1, label: 'Set Shopify listing quantity to 1', key: `listing:shopify:${sku}` }));
+    at(S.t + 2, () => act(inc, { type: 'release', order: p.id, label: 'Mark ready to ship', fixes: true }));
+  }
+  function onCustoms(ev) {
+    const inc = newInc('customs', 'Customs hold · food quarantine papers', CUSTOMS_ORDERS, { cause: 'Imported-food inspection hold: sanitary certificate missing for Manuka honey 250g', doc: ev.p.doc });
+    spark('read_document', `Read customs notice PDF for ${inc.id}: 2 pages → items, missing papers, affected B/L, customs-code mismatches`, 42000, 2200);
+    log('executor', 'track', `B/L ${ev.p.doc.bl} matched to ${CUSTOMS_ORDERS.length} orders`);
+    spark('plan', `Resolver plan for ${inc.id}: delay notice ×14 (Korean), split shipment ×${SPLIT.size}, supplier request draft, code fixes ×3`, 9000, 2600);
+    CUSTOMS_ORDERS.forEach((id, i) => at(S.t + 3 + Math.floor(i / 4), () => {
+      const split = SPLIT.has(id);
+      act(inc, { type: 'message_customer', order: id, label: 'Send delay notice', fixes: !split,
+        kr: `[서던팬트리] 주문 #${id}의 마누카 꿀이 통관 서류 보완으로 세관에서 대기 중이에요. 3–5일 늦어질 예정이에요.${split ? ' 함께 주문하신 상품은 오늘 먼저 보내 드려요.' : ''}`,
+        en: `Manuka honey in #${id} is waiting at customs for paperwork; expect 3–5 days.${split ? ' The rest of your order ships today.' : ''}` });
+      if (split) act(inc, { type: 'split_shipment', order: id, label: 'Ship non-food items now, keep honey at customs', fixes: true });
+    }));
+    at(S.t + 4, () => act(inc, { type: 'draft_document', order: CUSTOMS_ORDERS[0], key: `doc:${ev.p.doc.bl}`, label: 'Draft request to supplier for sanitary certificate',
+      en: `Hi, Korea customs is holding B/L ${ev.p.doc.bl}. Please send the sanitary certificate covering Manuka honey 250g × 14 so we can file it today.` }));
+    spark('draft', 'Supplier request letter (English)', 2500, 700);
+    // customs-code mismatches listed in the same notice become their own exception
+    at(S.t + 1, () => {
+      const pc = newInc('pccc', 'Customs code mismatch · 3 orders', PCCC_BAD, { cause: 'Personal customs code does not match recipient name (listed in the same notice)' });
+      spark('plan', `Resolver plan for ${pc.id}: ask each customer for the correct P-code, patch order`, 2000, 500);
+      PCCC_BAD.forEach((id, i) => at(S.t + 2 + i, () => act(pc, { type: 'message_customer', order: id, label: 'Ask for correct personal customs code',
+        kr: `[서던팬트리] 주문 #${id}의 개인통관고유부호가 받는 분 성함과 달라 통관이 멈췄어요. P로 시작하는 13자리 부호를 답장해 주세요.`,
+        en: `The customs code on #${id} doesn't match the recipient's name. Please reply with the 13-character code starting with P.` })));
+      if (!S.userPicked) S.selected = inc.id;
+    });
+  }
+  function onCancel(ev) {
+    const p = ev.p;
+    const inc = newInc('cancel', `Cancellation request · #${p.order}`, [p.order], { cause: `Customer: “${p.text}” after the customs delay notice` });
+    spark('plan', `Resolver plan for ${inc.id}: confirm receipt, keep held, refund needs approval`, 1500, 300);
+    act(inc, { type: 'message_customer', order: p.order, label: 'Confirm cancellation request received',
+      kr: '취소 요청 잘 받았어요. 환불은 확인 후 오늘 안에 안내해 드릴게요.', en: 'Got your cancellation request. We will confirm the refund today.' });
+    act(inc, { type: 'refund', order: p.order, amount: p.amount, label: `Refund ${won(p.amount)} on ${S.orders[p.order].channel === 'naver' ? 'Naver' : 'Shopify'}`, fixes: true });
+  }
+  function onCarrier(ev) {
+    const p = ev.p;
+    const inc = newInc('carrier', `Tracking stalled 3 days · #${p.order}`, [p.order], { cause: `${S.orders[p.order].tracking}: last scan 3 days ago at the Gonjiam hub` });
+    spark('plan', `Resolver plan for ${inc.id}: tell customer first, ask carrier, reship needs approval`, 1700, 380);
+    act(inc, { type: 'message_customer', order: p.order, label: 'Tell customer before they ask',
+      kr: `[서던팬트리] 주문 #${p.order} 배송 조회가 3일째 멈춰 있어 택배사에 확인을 요청했어요. 내일까지 결과를 알려 드릴게요.`,
+      en: `Tracking for #${p.order} hasn't moved in 3 days. We've asked the carrier and will update you by tomorrow.` });
+    act(inc, { type: 'carrier_inquiry', order: p.order, label: 'Open trace request with carrier' });
+    act(inc, { type: 'reship', order: p.order, amount: 30000, label: `Reship (${won(24000)} goods + ${won(6000)} shipping)`, fixes: true });
+    spark('compose', 'WhatsApp ask: reship decision', 900, 120);
+    const ap = S.approvals.filter(a => a.inc === inc.id);
+    S.wa.push({ at: S.t, from: 'lookout', kind: 'ask', approvals: ap.map(a => a.action),
+      kr: `#${p.order} 배송이 3일째 멈췄어요. 고객 안내는 끝냈어요. 재발송(${won(30000)}) 할까요?`,
+      en: `#${p.order} stalled 3 days. Customer already told. Reship for ${won(30000)}?` });
+  }
+  function onReply(ev) {
+    const p = ev.p;
+    const inc = S.incs.find(i => i.orders.some(o => o.id === p.order) && (i.type === 'address' || i.type === 'pccc'));
+    if (!inc) return;
+    if (inc.type === 'address') {
+      const addr = S.orders[p.order].address + ' ' + p.text;
+      act(inc, { type: 'update_order', order: p.order, patch: { address: addr }, label: `Patch address: … ${p.text}` });
+      act(inc, { type: 'release', order: p.order, label: 'Release hold', fixes: true });
+    } else {
+      act(inc, { type: 'update_order', order: p.order, patch: { pccc: p.text }, label: `Patch customs code to ${p.text}`, fixes: true });
+    }
+  }
+
+  // ---- Ask: approvals from buttons or voice
+  function decide(actionId, approve, via) {
+    const ap = S.approvals.find(a => a.action === actionId);
+    if (!ap || ap.state !== 'pending') { log('executor', 'skip_duplicate', `${actionId} already decided`); return false; }
+    const inc = S.incs.find(i => i.id === ap.inc), a = inc.actions.find(x => x.id === actionId);
+    ap.state = approve ? 'approved' : 'rejected';
+    log('seller', 'decision', `${approve ? 'approve' : 'reject'} ${a.type} #${a.order} via ${via}`);
+    if (approve) run(inc, a); else { a.state = 'rejected'; setOrder(inc, a.order, 'escalated'); }
+    return true;
+  }
+  // Stand-in for Spark's decision parse. Money is approved only on an explicit pick or an explicit yes; anything vague is asked back.
+  const NO = /하지\s*마|하지\s*말|말아|안\s*해|보류|취소하지/, UNSURE = /\?|까|생각|잠깐|나중|글쎄|모르/, YES = /해|진행|보내|승인|오케이|좋아/;
+  function parseDecision(text) {
+    const out = [], already = [], picked = new Set();
+    let unclear = false, ctx = null;
+    const refunds = S.approvals.filter(a => actionOf(a).type === 'refund');
+    const pend = list => list.filter(a => a.state === 'pending' && !picked.has(a.action));
+    const pick = (a, ok) => { if (a.state !== 'pending') { already.push(a.n); return; } if (!picked.has(a.action)) { picked.add(a.action); out.push([a.action, ok]); } };
+    for (const c of text.split(/[,.]|그리고|하고\s/)) {
+      const nums = [...c.matchAll(/(\d+)\s*번/g)].map(m => +m[1]);
+      const target = /재발송|다시\s*보내/.test(c) ? 'reship' : /환불/.test(c) || nums.length || /나머지/.test(c) ? 'refund' : ctx;
+      if (!target) continue;
+      ctx = target;
+      if (UNSURE.test(c)) { unclear = true; continue; }
+      const no = NO.test(c);
+      if (target === 'reship') {
+        const r = S.approvals.filter(a => actionOf(a).type === 'reship');
+        if (no || YES.test(c)) r.forEach(a => pick(a, !no)); else unclear = true;
+        continue;
+      }
+      const excl = /빼고|말고|제외/.test(c), all = /다|전부|모두|나머지/.test(c);
+      const byNum = nums.map(n => refunds.find(a => a.n === n)).filter(Boolean);
+      if (nums.length && byNum.length < nums.length) unclear = true;
+      if (excl) { if (no) unclear = true; else pend(refunds).filter(a => !nums.includes(a.n)).forEach(a => pick(a, true)); }
+      else if (nums.length) byNum.forEach(a => pick(a, !no));
+      else if (no || all || YES.test(c)) pend(refunds).forEach(a => pick(a, !no));
+      else unclear = true;
+    }
+    return { out, unclear, already };
+  }
+  const actionOf = ap => S.incs.find(i => i.id === ap.inc).actions.find(x => x.id === ap.action);
+  function voice(text) {
+    S.wa.push({ at: S.t, from: 'seller', kind: 'voice', kr: text, en: 'Voice note, 4s' });
+    log('voice', 'transcribe', `Voice note 4s → “${text}”`, { cost: 4 / 3600 * 0.18, ms: 610 });
+    S.cost += 4 / 3600 * 0.18;
+    spark('parse_decision', 'Map spoken decision to pending approvals', 800, 120);
+    const { out: ds, unclear, already } = parseDecision(text);
+    ds.forEach(([id, ok]) => decide(id, ok, 'voice'));
+    if (ds.length) S.voiced = true;
+    const name = id => { const a = S.incs.flatMap(i => i.actions).find(x => x.id === id); return a.type === 'refund' ? `환불 #${a.order}` : `재발송 #${a.order}`; };
+    const yes = ds.filter(d => d[1]).map(d => name(d[0])), no = ds.filter(d => !d[1]).map(d => name(d[0]));
+    const left = S.approvals.filter(a => a.state === 'pending').map(a => '#' + actionOf(a).order);
+    let kr, en;
+    if (ds.length) {
+      kr = [yes.length && `처리했어요: ${yes.join(', ')}${yes.some(x => x.startsWith('재발송')) ? ' (재발송 주문 생성)' : ''}.`, no.length && `하지 않을게요: ${no.join(', ')}.`, left.length && `${left.join(', ')}은 보류로 둘게요.`, unclear && '나머지 말씀은 확실하지 않아 그대로 뒀어요.'].filter(Boolean).join(' ');
+      en = `${yes.length} executed on the store, ${no.length} declined.${left.length ? ` ${left.length} kept on hold.` : ''}`;
+    } else if (already.length) { kr = `${already.map(n => n + '번').join(', ')}은 이미 처리했어요.${left.length ? ` 남은 건: ${left.join(', ')}.` : ''}`; en = 'Those were already decided.'; }
+    else { kr = '확실하지 않아서 아무것도 실행하지 않았어요. 번호로 말씀해 주시거나 버튼을 눌러 주세요.'; en = 'Not sure what you meant, so nothing ran. Say the numbers or use the buttons.'; }
+    log('policy', unclear && !ds.length ? 'ask_back' : 'decision_parsed', `${ds.length} decision(s)${unclear ? ', part unclear → asked back' : ''}`);
+    S.wa.push({ at: S.t, from: 'lookout', kind: 'text', kr, en });
+    return ds;
+  }
+
+  function counts() {
+    const os = S.incs.flatMap(i => i.orders);
+    const notified = os.filter(o => o.notified != null);
+    return {
+      found: os.length,
+      fixed: os.filter(o => o.status === 'fixed').length,
+      waiting: os.filter(o => o.status === 'waiting').length,
+      notify: notified.length ? notified.reduce((s, o) => s + (o.notified - o.opened), 0) / notified.length : null,
+    };
+  }
+
+  // ---- scenario (fixed seed). Background noise first, then the day's exceptions.
+  const BG_INQ = ['배송 언제 와요?', '선물 포장 되나요?', '비니 L 사이즈 재입고 예정 있나요?', '영수증 따로 받을 수 있나요?'];
+  let bgOrder = 1100;
+  for (let m = DAY0 + 7; m < DAY0 + 1440; m += 14 + Math.floor(rng() * 34)) {
+    const r = rng(), mm = m;
+    if (r < .5) { const id = String(bgOrder++), ch = rng() < .5 ? 'naver' : 'shopify', items = [['HONEY-250', 'SOCK-M', 'SOAP-3', 'TEA-TOWEL'][Math.floor(rng() * 4)]];
+      at(mm, () => ingest({ src: ch, kind: 'order_created', p: { id, channel: ch, items, apartment: true, address: '세종 새봄로 12 새봄마을 101동 702호' } })); }
+    else if (r < .7) { const q = BG_INQ[Math.floor(rng() * BG_INQ.length)]; at(mm, () => ingest({ src: 'customer', kind: 'customer_message', p: { text: q } })); }
+    else at(mm, () => ingest({ src: 'carrier', kind: 'tracking_update', p: { stalledDays: 0 } }));
+  }
+  at(540, () => { S.wa.push({ at: S.t, from: 'seller', kind: 'text', kr: '맡길게', en: "It's yours." }); log('seller', 'message', '“맡길게” — start watching');
+    S.wa.push({ at: S.t, from: 'lookout', kind: 'text', kr: 'Naver 스마트스토어와 Shopify를 지켜볼게요. 돈이 나가는 일만 여쭤볼게요.', en: "Watching Naver Smart Store and Shopify. I'll only ask about money." }); });
+  at(580, () => ingest({ src: 'shopify', kind: 'order_created', p: { id: '1042', channel: 'shopify', items: ['SOAP-3'], apartment: true, address: '서울 송파구 새봄로 12 새봄마을 아파트' } }));
+  at(615, () => ingest({ src: 'customer', kind: 'customer_message', p: { order: '1042', replyTo: true, text: '302동 1104호' } }));
+  at(665, () => ingest({ src: 'naver', kind: 'order_created', p: { id: 'N-2207', channel: 'naver', items: ['BEANIE-M'] } }));
+  at(852, () => ingest({ src: 'customs', kind: 'customs_notice', p: { doc: {
+    title_kr: '수입식품 등 검사 보류 통지', title_en: 'Imported food inspection hold', bl: 'AUSEL-2610-4471',
+    reason_kr: '수출국 위생증명서 미제출', reason_en: 'Sanitary certificate from exporting country not submitted',
+    items: [{ kr: '마누카 꿀 250g', en: 'Manuka honey 250g', qty: 14 }], pccc: PCCC_BAD, deadline: '2026-11-04' } } }));
+  CANCEL.forEach(([id, amount, m]) => at(m, () => ingest({ src: 'customer', kind: 'customer_message', p: { order: id, intent: 'cancel', amount, text: '통관 지연이면 취소할게요' } })));
+  at(880, () => {
+    const c = counts(), ap = S.approvals.filter(a => a.state === 'pending');
+    spark('compose', 'WhatsApp alert: customs hold summary + refund decisions', 3000, 250);
+    S.wa.push({ at: S.t, from: 'lookout', kind: 'ask', approvals: ap.map(a => a.action),
+      kr: `세관 보류 14건 처리 중이에요. 지연 안내 14건 보냈고, ${SPLIT.size}건은 나머지 상품 먼저 출고했어요. 통관부호 3건은 고객 답장 기다리는 중. 환불 ${ap.length}건만 결정해 주세요.`,
+      en: `Customs hold: 14 orders handled. 14 delay notices sent, ${SPLIT.size} split shipments, 3 code fixes pending replies. Only ${ap.length} refunds need you.` });
+    log('executor', 'notify', `WhatsApp alert sent (${c.found} found, ${c.waiting} waiting)`);
+  });
+  [['1053', 'P6802114439215', 905], ['1058', 'P4410098273364', 920], ['1061', 'P7731650092418', 948]].forEach(([id, code, m]) =>
+    at(m, () => ingest({ src: 'customer', kind: 'customer_message', p: { order: id, replyTo: true, text: code } })));
+  at(990, () => ingest({ src: 'carrier', kind: 'tracking_update', p: { order: '1017', stalledDays: 3 } }));
+  at(1080, () => {
+    const c = counts();
+    spark('briefing', 'Evening briefing from ledger', 6000, 450);
+    const saved = (c.fixed * 20 / 60).toFixed(1);
+    S.brief = { ...c, saved, cost: S.cost };
+    S.wa.push({ at: S.t, from: 'lookout', kind: 'brief',
+      kr: `오늘 브리핑: 주문 예외 ${c.found}건 발견 → ${c.fixed}건 처리, ${c.waiting}건 대기(결정 필요). 고객 안내까지 평균 ${Math.round(c.notify)}분. 아낀 시간 약 ${saved}시간. 모델 비용 $${S.cost.toFixed(2)} (하루 한도 $${COST_CAP.toFixed(2)}).`,
+      en: `Today: ${c.found} exceptions found → ${c.fixed} fixed, ${c.waiting} waiting on you. Avg ${Math.round(c.notify)} min to tell the customer. ~${saved} h saved. Model cost $${S.cost.toFixed(2)} of the $${COST_CAP.toFixed(2)} daily cap.` });
+    log('executor', 'notify', 'WhatsApp briefing sent');
+  });
+  at(1085, () => { if (!S.voiced && S.approvals.some(a => a.state === 'pending')) voice('환불은 1번이랑 2번만, 재발송은 해'); });
+
+  return {
+    S, counts, decide, voice, parseDecision,
+    advance(to) { S.t = Math.max(S.t, Math.min(to, DAY0 + 1440)); while (S.q.length && S.q[0].m <= S.t) { const e = S.q.shift(); const keep = S.t; S.t = e.m; e.fn(); S.t = keep; } },
+    // re-run a recorded action on purpose: shows the executor refusing a duplicate key
+    replay(actionId) { const inc = S.incs.find(i => i.actions.some(a => a.id === actionId)); return run(inc, inc.actions.find(a => a.id === actionId)); },
+  };
+}
+
+// ---------- self-check (runs once on load, headless) ----------
+function selfCheck() {
+  const r = [];
+  const ok = (name, cond) => r.push([name, !!cond]);
+  ok('refund needs approval', gate({ type: 'refund' }).d === 'approval');
+  ok('customer message is auto', gate({ type: 'message_customer', kr: '지연 안내' }).d === 'auto');
+  ok('health wording is blocked', gate({ type: 'message_customer', kr: '면역에 좋아요' }).d === 'blocked');
+  const e = createEngine(); e.advance(1079.9);
+  const pre = e.counts();
+  e.advance(1080);
+  ok('18:00 briefing 23 / 19 / 4', e.S.brief && e.S.brief.found === 23 && e.S.brief.fixed === 19 && e.S.brief.waiting === 4);
+  e.advance(DAY0 + 1440);
+  const end = e.counts();
+  ok('voice approves 2 refunds + reship, 1 kept', end.fixed === 22 && end.waiting === 1);
+  const refund = e.S.incs.flatMap(i => i.actions).find(a => a.type === 'refund' && a.state === 'done');
+  ok('idempotent: refund not executed twice', e.replay(refund.id) === false);
+  ok('normal events never reach Spark', e.S.normals > 20 && !e.S.normalSpark && pre.found === 23);
+  // voice parse: each phrase against a fresh 18:00 state (refunds 1–3 and the reship pending)
+  const at18 = () => { const x = createEngine(); x.advance(1080); return x; };
+  const parse = t => { const x = at18(); const r = x.parseDecision(t); const ord = id => x.S.incs.flatMap(i => i.actions).find(a => a.id === id).order; return { yes: r.out.filter(d => d[1]).map(d => ord(d[0])).sort().join(), no: r.out.filter(d => !d[1]).map(d => ord(d[0])).sort().join(), unclear: r.unclear }; };
+  const P = [
+    ['환불은 1번이랑 2번만, 재발송은 해', '1017,1055,1060', ''], ['1번이랑 2번 환불해줘', '1055,1060', ''], ['환불은 3번 빼고 다 해', '1055,1060', ''],
+    ['환불은 1번만 하고 나머지는 하지마', '1055', '1060,1063'], ['3번만 환불', '1063', ''], ['환불은 1번, 2번만', '1055,1060', ''],
+    ['환불 다 해줘', '1055,1060,1063', ''], ['환불은 하지마', '', '1055,1060,1063'], ['재발송 하지마', '', '1017'],
+    ['재발송은 좀 생각해볼게', '', '', true], ['재발송 할까?', '', '', true], ['1번 환불은 잠깐만', '', '', true],
+  ];
+  ok('voice phrases map to the right orders (12)', P.every(([t, y, n, u]) => { const r = parse(t); return r.yes === y && r.no === n && (!u || r.unclear); }));
+  return r;
+}
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const TYPE = { address: ['Address', 'find'], stock: ['Stock', 'find'], customs: ['Customs hold', 'find'], pccc: ['Customs code', 'find'], cancel: ['Cancellation', 'find'], carrier: ['Delivery', 'find'] };
+const COLOR = { address: 'var(--find)', stock: 'var(--find)', customs: 'var(--block)', pccc: 'var(--find)', cancel: 'var(--ask)', carrier: 'var(--ask)' };
+let eng, running = false, fast = false, last = 0, view = 0, filter = 'all', drawn = -1, trace = null;
+const stamped = new Map(); // incident id → last state drawn, so a stamp presses in only when the state changes
+
+function reset() { eng = createEngine(); view = DAY0; stamped.clear(); }
+function incStatus(inc) {
+  if (inc.orders.some(o => o.status === 'waiting')) return ['Waiting on you', 'ask'];
+  if (inc.orders.every(o => o.status === 'fixed')) return ['Fixed', 'fix'];
+  if (inc.orders.some(o => o.status === 'escalated')) return ['Handed to seller', 'block'];
+  return ['Fixing', 'find'];
+}
+
+function renderTop() {
+  const S = eng.S;
+  $('clock').textContent = fmt(S.t);
+  $('dayLbl').textContent = S.t >= DAY0 + 1440 ? 'Day complete' : 'Scenario clock';
+  $('modeLbl').textContent = running ? (fast ? 'Running · 4×' : 'Running · 24h in 90s') : 'Paused';
+  $('pause').textContent = running ? 'Pause' : 'Resume';
+  $('pause').disabled = S.t >= DAY0 + 1440;
+  $('speed').setAttribute('aria-pressed', fast);
+  const pct = m => ((m - DAY0) / 1440 * 100) + '%';
+  let h = `<div class="rail"></div><div class="done" style="width:${pct(S.t)}"></div>`;
+  for (let m = DAY0; m <= DAY0 + 1440; m += 180) h += `<span class="lbl" style="left:${pct(m)}">${fmt(m)}</span>`;
+  S.incs.forEach(i => h += `<span class="tick" title="${esc(fmt(i.opened) + ' ' + i.title)}" style="left:${pct(i.opened)};background:${COLOR[i.type]}"></span>`);
+  $('day').innerHTML = h;
+}
+function renderCounters() {
+  const S = eng.S, c = eng.counts(), g = { auto: 0, approval: 0, blocked: 0 };
+  S.incs.forEach(i => i.actions.forEach(a => g[a.decision]++));
+  const n = (v, cl) => `<span class="n ${cl}">${v}</span>`, done = S.t >= DAY0 + 1440;
+  const line = !c.found ? 'Watching Naver Smart Store and Shopify. Nothing has broken yet.'
+    : `While you ${done ? 'were packing' : 'pack'}, Lookout found ${n(c.found, 'find')} broken orders, fixed ${n(c.fixed, 'fix')}, and needs your OK on ${n(c.waiting, 'ask')}.`;
+  const sub = !c.found ? 'Press Run 24h to play one seller\'s day in 90 seconds.'
+    : `That is about <b>${(c.fixed * 20 / 60).toFixed(1)} hours</b> of your day. Customers heard back in <b>${c.notify == null ? '–' : Math.round(c.notify) + ' minutes'}</b> on average. Model cost today: <b>$${S.cost.toFixed(2)}</b>.`;
+  $('hero').innerHTML = `<div class="line">${line}</div><div class="sub">${sub}</div>`;
+  const L = k => S.ledger.filter(l => l.kind === k).length, ap = S.approvals;
+  const stages = [
+    ['find', 'Find', 'Muse Glimmer 30B', 'Local, open weights. Reads every event for $0.', `${S.glimmer} events → ${c.found} exceptions`],
+    ['fix', 'Fix', 'Muse Spark 1.3', 'Plans each fix, reads the customs PDF.', `${S.spark} calls · $${S.cost.toFixed(2)} of $${COST_CAP.toFixed(2)}`],
+    ['block', 'Policy gate', 'Rules in code', 'Money waits for you. Health wording is blocked.', `${g.auto} auto · ${g.approval} ask · ${g.blocked} blocked`],
+    ['', 'Executor', 'Store adapters', 'One key per write, checked after every write.', `${L('execute')} verified · ${L('unknown')} unknown · ${L('skip_duplicate')} dup refused`],
+    ['ask', 'Ask', 'WhatsApp + Voice Transcribe', 'Only money reaches the seller.', `${ap.filter(a => a.state === 'pending').length} waiting · ${ap.filter(a => a.state !== 'pending').length} decided`],
+  ];
+  $('flow').innerHTML = stages.map(([cl, n, m, w, v]) => `<div class="st"><div class="n" style="color:var(--${cl || 'ink'})">${n}</div><div class="m">${m}</div><div class="w">${w}</div><div class="v">${v}</div></div>`).join('');
+}
+// one plain sentence per problem: what broke, and what Lookout did about it
+const PLAIN = { address: o => `No unit number on #${o}`, stock: o => `Sold out on Naver · ${o}`, customs: () => 'Customs is holding 14 honey orders', pccc: () => 'Wrong customs code on 3 orders', cancel: o => `Customer wants to cancel #${o}`, carrier: o => `Parcel stuck for 3 days · #${o}` };
+function story(inc) {
+  const did = t => inc.actions.filter(a => a.type === t && a.state === 'done').length;
+  const ap = inc.actions.find(a => a.decision === 'approval'), money = ap && won(ap.amount);
+  const asked = ap && (ap.state === 'pending' ? `${money} ${ap.type === 'refund' ? 'refund' : 'reship'} waits for your OK.` : ap.state === 'done' ? `${ap.type === 'refund' ? 'Refunded' : 'Reshipped'} after your OK.` : 'You said no; left as is.');
+  switch (inc.type) {
+    case 'address': return did('update_order') ? 'Held the parcel, asked the customer, fixed the address.' : 'Held the parcel and asked the customer for the unit number.';
+    case 'stock': return 'Moved one from Shopify stock. Ready to ship.';
+    case 'customs': return `Read the notice. Told ${did('message_customer')} customers; shipped the rest of ${did('split_shipment')} orders.`;
+    case 'pccc': return `Asked for the right code. ${inc.orders.filter(o => o.status === 'fixed').length} of 3 fixed.`;
+    case 'cancel': return `Told the customer. ${asked}`;
+    case 'carrier': return `Told the customer, asked the carrier. ${asked}`;
+  }
+}
+function renderToday() {
+  const S = eng.S;
+  $('viewHint').textContent = document.body.classList.contains('tech-on') ? 'Every model call, check and store write.' : 'Click a row, or "Show how it works", to see every step.';
+  if (!S.incs.length) { $('today').innerHTML = `<div class="empty">Orders, scans and customer messages are coming in. Normal ones pass through; the first broken one appears here.</div>`; return; }
+  $('today').innerHTML = S.incs.map(i => {
+    const [st, cl] = incStatus(i);
+    const label = { fix: 'Fixed', ask: 'Needs you', find: 'Working', block: 'Yours' }[cl];
+    const press = stamped.has(i.id) && stamped.get(i.id) !== cl; stamped.set(i.id, cl);
+    return `<button class="trow${cl === 'ask' ? ' wait' : ''}" data-id="${i.id}"><span class="tm mono">${fmt(i.opened)}</span><span><b>${esc(PLAIN[i.type](i.orders[0].id))}</b><span class="d">${esc(story(i))}</span></span><span class="stamp ${cl}${press ? ' press' : ''}">${label}</span></button>`;
+  }).join('');
+}
+function renderIncs() {
+  const S = eng.S;
+  $('incCount').textContent = S.incs.length ? `${eng.counts().found} exceptions · ${new Set(S.incs.flatMap(i => i.orders.map(o => o.id))).size} orders · ${S.incs.length} incidents` : '';
+  if (!S.incs.length) { $('incs').innerHTML = `<div class="empty">Watching. Nothing broken yet. Normal orders, questions and tracking scans are triaged by Glimmer and left alone.</div>`; return; }
+  $('incs').innerHTML = S.incs.slice().reverse().map(i => {
+    const [st, cl] = incStatus(i);
+    const fixed = i.orders.filter(o => o.status === 'fixed').length;
+    return `<button class="inc" data-id="${i.id}" aria-current="${S.selected === i.id}"><span class="bar" style="background:${COLOR[i.type]}"></span><span>
+      <span class="row1"><span class="title">${esc(i.title)}</span><span class="mono muted">${fmt(i.opened)}</span></span>
+      <span class="row1" style="margin-top:3px"><span class="meta">${TYPE[i.type][0]} · ${fixed}/${i.orders.length} fixed</span><span class="pill ${cl}">${st}</span></span></span></button>`;
+  }).join('');
+}
+const STATE = { done: ['Done', 'fix'], pending: ['Asked seller', 'ask'], blocked: ['Blocked', 'block'], skipped: ['Duplicate skipped', 'plain'], rejected: ['Rejected', 'block'], unknown: ['Unknown', 'block'] };
+const DEC = { auto: ['auto', 'fix'], approval: ['approval', 'ask'], blocked: ['blocked', 'block'] };
+const OST = { fixed: 'var(--fix)', waiting: 'var(--ask)', fixing: 'var(--find)', escalated: 'var(--block)' };
+function renderDetail() {
+  const S = eng.S, inc = S.incs.find(i => i.id === S.selected);
+  if (!inc) { $('detail').innerHTML = `<h3>Watching the store</h3><p class="muted" style="margin:0">When an order breaks, the exception opens here with what Lookout found, what it fixed, and what it is asking you.</p>`; return; }
+  const [st, cl] = incStatus(inc);
+  const autos = inc.actions.filter(a => a.decision === 'auto').length, asks = inc.actions.filter(a => a.decision === 'approval');
+  let h = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline"><h3>${esc(inc.title)}</h3><span class="pill ${cl}">${st}</span></div>
+  <dl class="cause"><dt>Opened</dt><dd class="mono">${fmt(inc.opened)} · ${inc.id}</dd><dt>Cause</dt><dd class="kr">${esc(inc.cause)}</dd><dt>Orders</dt><dd><div class="orders">${inc.orders.map(o => `<button class="ord mono" data-trace="${o.id}" aria-pressed="${trace === o.id}" title="Show every step for #${o.id}"><span class="dot" style="background:${OST[o.status]}"></span>#${o.id}</button>`).join('')}</div></dd></dl>
+  <div class="steps">
+    <div class="step find"><div class="n">Find · Glimmer</div><p>${esc(TYPE[inc.type][0])} exception from ${inc.orders.length} order${inc.orders.length > 1 ? 's' : ''}.</p></div>
+    <div class="step fix"><div class="n">Fix · Spark</div><p>${autos} action${autos === 1 ? '' : 's'} run by the executor, each verified.</p></div>
+    <div class="step ask"><div class="n">Ask · WhatsApp</div><p>${asks.length ? asks.length + ' money decision' + (asks.length > 1 ? 's' : '') + ' sent to you.' : 'Nothing to ask. Reported only.'}</p></div>
+  </div>`;
+  if (trace && inc.orders.some(o => o.id === trace)) {
+    // every ledger row about this order: its own events, the plans for its incidents, gate checks and writes
+    const incIds = S.incs.filter(i => i.orders.some(o => o.id === trace)).map(i => i.id);
+    const rows = S.ledger.filter(l => l.detail.includes('#' + trace) || incIds.some(id => l.detail.includes('for ' + id + ' ') || l.detail.includes('for ' + id + ':')));
+    h += `<div class="trace"><h4>Trace for #${esc(trace)} · ${rows.length} steps, oldest first</h4><table><tbody>${rows.map(l => `<tr><td class="mono">${fmt(l.at)}</td><td class="actor ${l.actor}">${l.actor}</td><td class="mono">${esc(l.kind)}</td><td class="kr">${esc(l.detail)}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  if (inc.doc) {
+    const d = inc.doc;
+    h += `<div class="doc"><div class="paper kr"><h4>${esc(d.title_kr)}</h4>B/L ${esc(d.bl)}<br>사유: ${esc(d.reason_kr)}<br>품목: ${d.items.map(i => esc(i.kr) + ' × ' + i.qty).join(', ')}<br>통관부호 불일치: ${d.pccc.map(x => '#' + x).join(', ')}<br>보완 기한: ${esc(d.deadline)}</div>
+      <div class="paper"><h4>Spark extraction</h4><pre>${esc(JSON.stringify({ hold: d.title_en, bl: d.bl, missing: [d.reason_en], items: d.items.map(i => ({ sku: 'HONEY-250', name: i.en, qty: i.qty })), pccc_mismatch: d.pccc, file_by: d.deadline }, null, 1))}</pre></div></div>`;
+  }
+  const acts = inc.actions.slice().reverse().slice(0, 40);
+  h += `<div class="actions">${acts.map(a => {
+    const [s, sc] = STATE[a.state] || ['Planned', 'plain'];
+    const [d, dc] = DEC[a.decision];
+    return `<div class="act"><span class="at mono">${fmt(a.doneAt ?? a.at)}</span><div class="what"><div>${esc(a.label)}${a.order ? ` <span class="mono muted">#${esc(a.order)}</span>` : ''}</div>
+      <div class="key mono">${esc(a.type)} · key ${esc(a.key)}${a.amount ? ' · ' + won(a.amount) : ''}</div>
+      ${a.kr || a.en ? `<div class="msg">${a.kr ? `<div class="kr">${esc(a.kr)}</div>` : ''}${a.en ? `<div class="${a.kr ? 'en' : ''}">${esc(a.en)}</div>` : ''}</div>` : ''}</div>
+      <div style="display:grid;gap:4px;justify-items:end"><span class="pill ${dc}">${d}</span><span class="pill ${sc}">${s}</span>${a.dupes ? `<span class="pill plain">duplicate refused ×${a.dupes}</span>` : ''}${a.state === 'done' && MONEY.has(a.type) ? `<button class="btn mini" data-replay="${a.id}" aria-label="Try to run ${esc(a.type)} #${esc(a.order)} again">Run again</button>` : ''}</div></div>`;
+  }).join('')}${inc.actions.length > 40 ? `<div class="act"><span></span><span class="muted">${inc.actions.length - 40} earlier actions in the ledger</span><span></span></div>` : ''}</div>`;
+  $('detail').innerHTML = h;
+}
+const ACTORS = ['all', 'glimmer', 'spark', 'policy', 'executor', 'seller', 'voice'];
+function renderLedger() {
+  const S = eng.S;
+  $('filters').innerHTML = ACTORS.map(a => `<button class="chip" data-f="${a}" aria-pressed="${filter === a}">${a}</button>`).join('');
+  const rows = S.ledger.filter(l => filter === 'all' || l.actor === filter).slice(-160).reverse();
+  $('ledger').innerHTML = rows.map(l => `<tr><td class="mono">${fmt(l.at)}</td><td class="actor ${l.actor}">${l.actor}</td><td class="mono">${esc(l.kind)}</td><td class="kr">${esc(l.detail)}</td><td class="num mono">${esc(l.tokens)}</td><td class="num mono">${l.cost ? '$' + l.cost.toFixed(4) : ''}</td><td class="num mono">${l.ms}</td></tr>`).join('') || `<tr><td colspan="7" class="muted">Ledger is empty until the run starts.</td></tr>`;
+}
+function renderPhone() {
+  const S = eng.S, feed = $('feed');
+  const nearBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 60;
+  feed.innerHTML = S.wa.map(m => {
+    let body = `<div class="kr">${esc(m.kr)}</div><div class="en">${esc(m.en)}</div>`;
+    if (m.kind === 'voice') body = `<div class="wave">${Array.from({ length: 26 }, (_, i) => `<i style="height:${6 + Math.abs(Math.sin(i * 1.7)) * 14}px"></i>`).join('')}</div><div class="en kr">“${esc(m.kr)}”</div>`;
+    if (m.kind === 'ask') body += `<div class="q">${m.approvals.map(id => {
+      const ap = S.approvals.find(a => a.action === id), a = S.incs.flatMap(i => i.actions).find(x => x.id === id);
+      const tag = ap.n ? ap.n + '. ' : '';
+      const ctl = ap.state === 'pending' ? `<span class="qb"><button data-ap="${id}" data-ok="1" aria-label="Approve ${esc(a.type)} #${esc(a.order)} ${won(a.amount)}">Approve</button><button data-ap="${id}" data-ok="0" aria-label="Reject ${esc(a.type)} #${esc(a.order)}">Reject</button></span>` : `<span class="pill ${ap.state === 'approved' ? 'fix' : 'block'}">${ap.state}</span>`;
+      return `<div class="qi"><span>${tag}<span class="mono">#${esc(a.order)}</span> ${esc(a.type === 'refund' ? 'refund ' + won(a.amount) : 'reship ' + won(a.amount))}</span>${ctl}</div>`;
+    }).join('')}</div>`;
+    return `<div class="bub ${m.from === 'seller' ? 'out' : 'in'}">${body}<div class="tm mono">${fmt(m.at)}</div></div>`;
+  }).join('');
+  if (nearBottom || running) feed.scrollTop = feed.scrollHeight;
+}
+function renderBanner() {
+  const b = $('banner');
+  if (!running && eng.S.t < DAY0 + 1440 && eng.S.t > DAY0) { b.hidden = false; b.textContent = `Paused at ${fmt(eng.S.t)}. Answer the refunds on the phone, or press Run 24h to watch the whole day.`; }
+  else if (eng.S.t >= DAY0 + 1440) {
+    const c = eng.counts(), ap = eng.S.approvals, voices = eng.S.wa.filter(m => m.kind === 'voice').length;
+    b.hidden = false;
+    b.innerHTML = `<b>Day done.</b> You made ${ap.filter(a => a.state !== 'pending').length} decisions${voices ? ` in ${voices} voice note${voices > 1 ? 's' : ''}` : ''}. Lookout did the rest.`;
+  }
+  else b.hidden = true;
+}
+function render() { renderTop(); renderCounters(); renderToday(); renderIncs(); renderDetail(); renderLedger(); renderPhone(); renderBanner(); document.querySelectorAll('.kr:not([lang])').forEach(e => e.lang = 'ko'); drawn = eng.S.ledger.length; }
+
+function loop(ts) {
+  if (running) {
+    const dt = last ? ts - last : 0;
+    view = Math.min(DAY0 + 1440, view + dt / MS_PER_MIN * (fast ? 4 : 1));
+    eng.advance(view);
+    if (view >= DAY0 + 1440) running = false;
+    // rebuild panels only when something happened, so clicks land on stable buttons while the day plays
+    if (eng.S.ledger.length !== drawn || !running) render(); else renderTop();
+  }
+  last = ts;
+  requestAnimationFrame(loop);
+}
+
+$('run').onclick = () => { reset(); running = true; render(); };
+$('pause').onclick = () => { running = !running; view = eng.S.t; render(); };
+$('speed').onclick = () => { fast = !fast; render(); };
+const setTech = on => { document.body.classList.toggle('tech-on', on); $('techBtn').setAttribute('aria-pressed', on); $('techBtn').textContent = on ? 'Back to simple view' : 'Show how it works'; render(); };
+$('techBtn').onclick = () => setTech(!document.body.classList.contains('tech-on'));
+$('today').onclick = e => { const b = e.target.closest('.trow'); if (!b) return; eng.S.selected = b.dataset.id; eng.S.userPicked = true; setTech(true); scrollTo({ top: 0 }); };
+$('incs').onclick = e => { const b = e.target.closest('.inc'); if (!b) return; eng.S.selected = b.dataset.id; eng.S.userPicked = true; render(); };
+$('detail').onclick = e => {
+  const t = e.target.closest('button[data-trace]'); if (t) { trace = trace === t.dataset.trace ? null : t.dataset.trace; renderDetail(); return; }
+  const b = e.target.closest('button[data-replay]'); if (!b) return; eng.replay(b.dataset.replay); render();
+};
+$('filters').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; filter = b.dataset.f; renderLedger(); };
+$('feed').onclick = e => { const b = e.target.closest('button[data-ap]'); if (!b) return; eng.decide(b.dataset.ap, b.dataset.ok === '1', 'button'); render(); };
+$('voiceForm').onsubmit = e => {
+  e.preventDefault(); const t = $('voiceText').value.trim(); if (!t) return;
+  if (!eng.S.approvals.length) { eng.S.wa.push({ at: eng.S.t, from: 'lookout', kind: 'text', kr: '아직 결정할 건이 없어요.', en: 'Nothing waiting on you yet.' }); render(); return; }
+  eng.voice(t); render();
+};
+
+// open in a working state: the day played up to the 14:40 alert
+reset(); eng.advance(881); view = eng.S.t; eng.S.selected = 'X3';
+const st = selfCheck();
+$('selftest').textContent = `Self-check ${st.filter(x => x[1]).length}/${st.length} passed`;
+$('selftest').title = st.map(([n, p]) => (p ? '✓ ' : '✗ ') + n).join('\n');
+st.forEach(([n, p]) => console[p ? 'log' : 'error']('self-check', p ? 'pass' : 'FAIL', n));
+render();
+requestAnimationFrame(loop);
+</script>

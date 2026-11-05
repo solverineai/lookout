@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lookout</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Apple-style system (styles.refero.design, Apple iPhone pages): #f5f5f7 ground, white 28px cards, Ink text, no shadows,
+   blue only on filled pills. One screen on desktop: numbers, what broke, one list that scrolls inside; Lookout on the right. */
+:root{
+  --canvas:#FFFFFF; --band:#F5F5F7; --card:#FFFFFF; --ink:#1D1D1F; --muted:#6E6E73; --faint:#86868B; --hair:#D2D2D7; --fill:#F5F5F7;
+  --blue:#0071E3; --link:#0066CC; --copper:#B64400; --green:#1D7A3E; --red:#D70015; --amber:#B86E00;
+  --bubble-in:#E9E9EB; --bubble-out:#0071E3;
+  --f-display:-apple-system,"SF Pro Display",BlinkMacSystemFont,Inter,"Apple SD Gothic Neo","Helvetica Neue",Arial,sans-serif;
+  --f-text:-apple-system,"SF Pro Text",BlinkMacSystemFont,Inter,"Apple SD Gothic Neo","Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --canvas:#000000; --band:#000000; --card:#1D1D1F; --ink:#F5F5F7; --muted:#A1A1A6; --faint:#86868B; --hair:#333336; --fill:#2C2C2E;
+  --blue:#0071E3; --link:#2997FF; --copper:#FF8A3D; --green:#30D158; --red:#FF453A; --amber:#FFB340;
+  --bubble-in:#2C2C2E; --bubble-out:#0071E3; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--band);color:var(--ink);font:400 17px/1.47 var(--f-text);letter-spacing:-.374px;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;letter-spacing:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* bar */
+.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--canvas) 80%,transparent);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--hair)}
+.nav .in{max-width:1320px;margin:0 auto;height:52px;display:flex;align-items:center;gap:12px;padding:0 max(20px,env(safe-area-inset-left))}
+.nav b{font:600 21px/1 var(--f-display);letter-spacing:.231px;margin-right:auto}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);letter-spacing:-.12px}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.status.on i{background:var(--green)}
+.pill{border:0;border-radius:9999px;padding:6px 14px;font-size:14px;letter-spacing:-.224px;background:var(--blue);color:#fff}
+.pill.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--faint)}
+.pill:disabled{opacity:.4;cursor:default}
+
+/* one screen: the board fills the viewport; the assistant slides in only when asked */
+.page{max-width:1320px;margin:0 auto;padding:20px max(20px,env(safe-area-inset-left));display:grid;height:calc(100vh - 53px)}
+.left{display:flex;flex-direction:column;gap:14px;min-height:0}
+.left .board{flex:1}
+/* the order Lookout is working on right now, step by step */
+.now{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:18px;padding:12px 18px;font-size:14px;flex-wrap:wrap}
+.now .pulse{width:8px;height:8px;border-radius:50%;background:var(--blue);animation:blink 1.2s infinite}
+.now b{font-weight:600}
+.now ol{display:flex;gap:6px;list-style:none;margin:0 0 0 auto;padding:0;flex-wrap:wrap}
+.now li{padding:3px 11px;border-radius:9999px;background:var(--fill);color:var(--faint);font-size:13px}
+.now li.done{color:var(--ink)} .now li.on{background:var(--blue);color:#fff}
+.now small{flex-basis:100%;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.built{margin-left:auto;font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.built span{padding:3px 10px;border-radius:9999px;box-shadow:inset 0 0 0 1px var(--hair)}
+.proof{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.proof em{font-style:normal;color:var(--blue);font-weight:600}
+
+
+.types{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.types .lbl{font-size:13px;color:var(--muted);margin-right:4px}
+.chip{border:0;border-radius:9999px;padding:5px 12px;font-size:13px;letter-spacing:-.2px;background:var(--card);color:var(--ink);display:inline-flex;gap:6px;align-items:baseline}
+.chip b{font-weight:600;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--canvas)}
+
+.scroll{overflow:auto;min-height:0}
+.tag{justify-self:start;font-size:12px;font-weight:600;letter-spacing:-.12px;padding:3px 10px;border-radius:9999px;background:var(--fill);white-space:nowrap}
+.oid{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+.what{min-width:0}
+.what b{font-weight:600}
+.what small{display:block;font-size:13px;color:var(--muted);letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.steps{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-size:13px}
+.steps span{padding:2px 9px;border-radius:9999px;background:var(--fill)}
+.steps em{font-style:normal;color:var(--faint)}
+.acts{display:flex;gap:6px}
+.tm{font-size:13px;color:var(--faint);font-variant-numeric:tabular-nums}
+.chev{color:var(--faint);font-size:20px;line-height:1}
+.empty{padding:28px 20px;color:var(--muted)}
+.act{display:grid;grid-template-columns:44px 84px minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:9px 20px;border-top:1px solid var(--hair);font-size:14px;letter-spacing:-.224px}
+.act:first-child{border-top:0}
+.actlist .act{padding-left:0;padding-right:0;grid-template-columns:44px 84px minmax(0,1fr) auto}
+.who{font-size:12px;font-weight:600}
+.who.glimmer{color:var(--amber)} .who.spark{color:var(--blue)} .who.policy{color:var(--copper)} .who.executor{color:var(--green)}
+.act .d{min-width:0;overflow-wrap:anywhere}
+.act .d small{display:block;color:var(--muted);font-size:12px}
+.act .c{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.try{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.try .pill{font-size:13px;padding:5px 12px}
+
+/* board: three lists side by side, each scrolls inside */
+.board{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr);gap:12px;min-height:0}
+/* the record of one order, always open beside the lists: no click needed to see how it was handled */
+.side{display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px;min-height:0}
+.col.you .scroll{max-height:150px}
+.col.rec header{justify-content:space-between}
+.col.rec .hint{font-size:12px;color:var(--muted)}
+.col .recb{padding:12px 18px 18px;gap:10px;align-content:start;font-size:14px}
+.col .recb h2{font-size:19px;line-height:1.25;letter-spacing:-.2px}
+.col .recb blockquote{font-size:13px;padding:8px 12px;border-radius:12px}
+.col .recb p{font-size:14px;color:var(--muted)}
+.col .recb h4{font-size:14px;margin:4px 0 0}
+.col .recb .wr{gap:6px}
+.col .recb .wr div{padding:8px 12px;font-size:13px;border-radius:12px}
+.col .recb .tl li{padding:4px 0}
+.col .recb .tl b{font-size:13px}
+.col .recb .tl span.d{font-size:12px}
+.item.sel{background:color-mix(in srgb,var(--blue) 8%,transparent);box-shadow:inset 3px 0 0 var(--blue)}
+.col{background:var(--card);border-radius:24px;display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;overflow:hidden}
+.col header{display:flex;align-items:baseline;gap:10px;padding:16px 18px 12px;border-bottom:1px solid var(--hair)}
+.col header .v{font:600 34px/1 var(--f-display);letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.col header .k{font-size:15px;font-weight:600}
+.col.ask header .v{color:var(--copper)} .col.fix header .v{color:var(--green)} .col.you header .v{color:var(--red)}
+.item{display:grid;gap:6px;padding:12px 18px;border-top:1px solid var(--hair);cursor:pointer}
+.item:first-child{border-top:0}
+.item:hover{background:color-mix(in srgb,var(--fill) 60%,transparent)}
+.item .line1{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.item .line1 .tm{margin-left:auto}
+.item b{font-weight:600;font-size:15px;line-height:1.3}
+.item small{font-size:13px;color:var(--muted);line-height:1.35}
+.item .acts{margin-top:2px}
+.item .acts .pill{font-size:13px;padding:5px 12px}
+
+/* chat: its own screen, like a messaging app */
+.seg{display:inline-flex;background:var(--fill);border-radius:9999px;padding:2px}
+.seg button{border:0;background:transparent;border-radius:9999px;padding:5px 14px;font-size:14px;letter-spacing:-.224px;color:var(--muted);position:relative}
+.seg button[aria-current="page"]{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg i{position:absolute;top:-3px;right:-2px;min-width:17px;height:17px;padding:0 5px;border-radius:9999px;background:var(--red);color:#fff;font:600 11px/17px var(--f-text);font-style:normal}
+.icon{width:34px;height:34px;padding:0;display:grid;place-items:center}
+.aide{display:none;flex:1;min-height:0;grid-template-rows:minmax(0,1fr) auto}
+body[data-view="chat"]{height:100vh;height:100dvh;display:flex;flex-direction:column}
+[data-view="chat"] .aide{display:grid} [data-view="chat"] .page{display:none}
+.thread{overflow:auto;min-height:0}
+.thread .in{max-width:760px;margin:0 auto;padding:28px 20px 12px;display:flex;flex-direction:column;gap:14px}
+.msg{font-size:16px;line-height:1.5;letter-spacing:-.25px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.lo{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start}
+.msg.lo::before{content:"L";width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--canvas);display:grid;place-items:center;font:600 14px/1 var(--f-display)}
+.msg.me{align-self:flex-end;max-width:78%;background:var(--card);padding:9px 16px;border-radius:20px}
+.msg.auto{opacity:.7}
+.msg .who2{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
+.msg .q{display:flex;gap:6px;margin-top:10px}
+.msg .q button{border:0;border-radius:9999px;padding:6px 14px;font-size:14px;background:var(--blue);color:#fff}
+.msg .q button.no{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--faint)}
+.msg .done{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+.oref{border:0;padding:0 2px;background:none;color:var(--link);font-weight:600;font-variant-numeric:tabular-nums}
+.oref:hover{text-decoration:underline}
+.typing{display:flex;gap:4px;padding:8px 0 0 40px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s} .typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.when{align-self:center;font-size:12px;color:var(--faint)}
+.composer{max-width:760px;width:100%;margin:0 auto;padding:6px 20px max(18px,env(safe-area-inset-bottom))}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+.chips button{flex:none;border:1px solid var(--hair);border-radius:9999px;padding:6px 14px;font-size:14px;background:var(--card)}
+.composer form{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--hair);border-radius:26px;padding:6px 6px 6px 18px}
+.composer input{flex:1;min-width:0;border:0;background:transparent;font-size:16px;padding:8px 0;outline:none}
+.composer form:focus-within{border-color:var(--faint)}
+.mic,.send{width:38px;height:38px;border-radius:50%;border:0;background:var(--fill);flex:none;display:grid;place-items:center}
+.send{background:var(--ink);color:var(--canvas)}
+.send:disabled{opacity:.25;cursor:default}
+.mic.rec{background:var(--red);color:#fff}
+.mic:disabled{opacity:.4;cursor:default}
+
+/* audit sheet */
+dialog#sheet{border:0;padding:0;margin:0 0 0 auto;height:100vh;max-height:100vh;width:min(620px,100vw);background:var(--canvas);color:var(--ink)}
+dialog#sheet::backdrop{background:rgba(0,0,0,.32);backdrop-filter:blur(2px)}
+.sheet{padding:28px;display:grid;gap:18px}
+.sheet .x{justify-self:end;border:0;background:var(--fill);border-radius:9999px;width:32px;height:32px}
+.sheet h2{margin:0;font:600 28px/1.14 var(--f-display);letter-spacing:.196px}
+.sheet .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.sheet blockquote{margin:0;padding:12px 16px;border-radius:16px;background:var(--fill);font-size:15px}
+.sheet h4{margin:6px 0 0;font:600 17px/1.2 var(--f-display)}
+.label{font-weight:600}
+.label.fixed{color:var(--green)} .label.waiting{color:var(--copper)} .label.fixing{color:var(--faint)} .label.escalated{color:var(--red)}
+.tl{list-style:none;margin:0;padding:0;display:grid}
+.tl li{display:grid;grid-template-columns:48px 12px minmax(0,1fr);gap:10px;padding:7px 0}
+.tl .t{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;padding-top:2px}
+.tl .dot{width:10px;height:10px;border-radius:50%;margin-top:5px;background:var(--faint)}
+.tl .dot.glimmer{background:var(--amber)} .tl .dot.spark{background:var(--blue)} .tl .dot.policy{background:var(--copper)} .tl .dot.executor{background:var(--green)} .tl .dot.seller{background:var(--ink)}
+.tl b{display:block;font-weight:600;font-size:15px}
+.tl span.d{display:block;font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.tl code,.wr code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);overflow-wrap:anywhere}
+.wr{display:grid;gap:8px}
+.wr div{background:var(--fill);border-radius:16px;padding:12px 14px;display:grid;gap:4px;font-size:14px}
+.st{font-size:12px;font-weight:600}
+.st.done,.st.approved{color:var(--green)} .st.pending{color:var(--copper)} .st.blocked,.st.failed,.st.unknown,.st.rejected{color:var(--red)}
+
+@media (max-width:1000px),(max-height:640px){
+  .page{grid-template-columns:minmax(0,1fr);height:auto}
+  .left{grid-template-rows:none}
+  .board{grid-template-columns:minmax(0,1fr)}
+  .col{max-height:60vh}
+  .col.rec{display:none}
+  .col.you .scroll{max-height:none}
+}
+@media (max-width:600px){
+  .nav .in{gap:8px}
+  .nav b{font-size:19px}
+  .nav .in{flex-wrap:wrap;height:auto;padding-top:8px;padding-bottom:8px}
+  .status span{display:none}
+  .seg{order:9;width:100%;display:flex}
+  .seg button{flex:1;padding:6px 0}
+  .page{padding:14px 12px 24px}
+  .types{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px}
+  .chip,.types .lbl{flex:none;white-space:nowrap}
+  .left>*,.left .board{flex:none}
+  .built{flex:none}
+  .col{max-height:none}
+  .thread .in,.composer{padding-left:14px;padding-right:14px}
+  .msg.me{max-width:88%}
+}
+@media (prefers-reduced-motion:no-preference){.msg{animation:in .3s cubic-bezier(.22,1,.36,1) both}@keyframes in{from{opacity:0;transform:translateY(6px)}}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="in">
+  <b>Lookout</b>
+  <span class="status" id="status"><i></i><span>Watching</span></span>
+  <span class="seg" role="navigation" aria-label="Screens"><button data-view="board" aria-current="page">Orders</button><button data-view="chat" id="chat">Chat<i hidden></i></button></span>
+  <button class="pill ghost" id="activity">Activity</button>
+  <button class="pill ghost icon" id="theme" aria-label="Night mode"></button>
+  <button class="pill" id="night">Run the night</button>
+</div></nav>
+
+<main class="page">
+  <section class="left">
+    <div class="types" id="types"></div>
+    <div class="now" id="now" aria-live="polite" hidden></div>
+    <div class="board">
+      <section class="col ask"><header><span class="v" id="nAsk">0</span><span class="k">Needs your OK</span></header><div class="scroll" id="colAsk"></div></section>
+      <section class="col fix"><header><span class="v" id="nFix">0</span><span class="k">Fixed on its own</span></header><div class="scroll" id="colFix"></div></section>
+      <div class="side">
+        <section class="col you"><header><span class="v" id="nYou">0</span><span class="k">Yours to handle</span></header><div class="scroll" id="colYou"></div></section>
+        <section class="col rec" aria-live="polite"><header><span class="k">Record</span><span class="hint" id="recHint"></span></header><div class="scroll sheet recb" id="recBody"></div></section>
+      </div>
+    </div>
+    <div class="try" id="try">Break one
+      <button class="pill ghost" data-preset="unit">No unit number</button>
+      <button class="pill ghost" data-preset="stock">Out of stock</button>
+      <button class="pill ghost" data-preset="cancel">Cancel request</button>
+    </div>
+  </section>
+</main>
+<section class="aide" id="aide" aria-label="Chat with Lookout">
+  <div class="thread" id="thread" aria-live="polite"></div>
+  <div class="composer">
+    <div class="chips" id="chips">
+      <button data-say="How was last night?">How was last night?</button>
+      <button data-say="What's left?">What's left?</button>
+      <button data-say="Approve all">Approve all</button>
+    </div>
+    <form id="ask">
+      <label for="askText" hidden>Message Lookout</label>
+      <input id="askText" placeholder="Message Lookout" maxlength="500" autocomplete="off" enterkeyhint="send">
+      <button type="button" class="mic" id="mic" aria-label="Hold to talk"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button class="send" id="send" aria-label="Send" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+    </form>
+  </div>
+</section>
+<dialog id="sheet" aria-label="How Lookout handled this order"><div class="sheet" id="sheetBody"></div></dialog>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const t = s => new Date(s * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  .then(async r => { if (!r.ok) { const e = await r.json().catch(() => ({})); note(e.detail || 'That did not work. Try again.'); } return r; });
+const note = text => { const d = document.createElement('div'); d.className = 'msg lo'; d.textContent = text; $('thread').append(d); $('thread').scrollTop = 1e9; };
+const say = text => post('/api/boss', { text }).then(() => { lastState = ''; poll(); });
+
+// Night mode: off by default, remembered per browser
+const setTheme = dark => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; $('theme').innerHTML = dark ? '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' : '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'; $('theme').setAttribute('aria-label', dark ? 'Day mode' : 'Night mode'); try { localStorage.setItem('lookout-theme', dark ? 'dark' : 'light'); } catch {} };
+let savedTheme = 'light'; try { savedTheme = localStorage.getItem('lookout-theme') || 'light'; } catch {}
+setTheme(savedTheme === 'dark');
+$('theme').onclick = () => setTheme(document.documentElement.dataset.theme !== 'dark');
+
+const TYPE = { address: 'Address', stock: 'Out of stock', delay: 'Delivery delay', cancel: 'Cancellation', other: 'Customer message' };
+const LANG = { ko: 'Korean', ja: 'Japanese', en: 'English', de: 'German', es: 'Spanish', zh: 'Chinese', fr: 'French' };
+const LABEL = { fixed: 'Fixed', waiting: 'Needs you', fixing: 'Working on it', escalated: 'Yours to handle' };
+const DID = {
+  hold_order: () => 'Held the parcel', release_order: () => 'Sent it on its way',
+  update_address: a => `Fixed the address: ${[a.line1, a.line2].filter(Boolean).join(' ')}`,
+  cancel_order: () => 'Cancelled before shipping', move_stock: a => `Moved ${a.qty} from ${a.from_location} to ${a.to_location}`,
+  notify_customer: a => `Told the customer in ${LANG[a.language] || a.language}`, request_refund: a => `Refund ₩${Number(a.amount).toLocaleString()}`,
+  request_reship: () => 'Reship', publish_product: a => `Publish ${a.title}`,
+};
+const SHORT = {
+  hold_order: () => 'Held', release_order: () => 'Shipped', update_address: a => `Address → ${a.line2 || a.line1}`,
+  cancel_order: () => 'Cancelled', move_stock: a => `Moved ${a.qty} from ${a.from_location}`,
+  notify_customer: a => `Told customer (${LANG[a.language] || a.language})`, request_refund: a => `Refunded ₩${Number(a.amount).toLocaleString()}`,
+  request_reship: () => 'Reshipped', publish_product: () => 'Published',
+};
+const ASK = { request_refund: a => `Refund ₩${Number(a.amount).toLocaleString()}?`, request_reship: () => 'Reship this order?', publish_product: a => `Publish ${a.title}?` };
+const STOP = { blocked: 'Stopped before sending: the reply made a health claim', failed: 'Failed, not retried', unknown: 'Could not confirm in the store, not retried' };
+const STEP = {
+  'glimmer:triage': 'Glimmer read the event', 'spark:triage': 'Spark read the event (Glimmer host not set)', 'glimmer:verdict': 'Verdict',
+  'policy:fallback': 'Triage ran on Spark', 'spark:plan': 'Spark planned the fix', 'spark:act': 'Spark chose the next step', 'spark:boss': 'Spark answered you',
+  'policy:gate': 'Policy gate', 'executor:execute': 'Store write, checked by reading it back', 'executor:skip_duplicate': 'Duplicate refused',
+  'executor:failed': 'Store write failed, not retried', 'executor:unknown': 'Write not confirmed, not retried', 'seller:decision': 'Your decision',
+  'executor:preloaded': 'Preloaded orders', 'policy:cost_cap': 'Daily cost cap reached', 'executor:chat': 'Answered from the records',
+  'executor:error': 'Error', 'executor:run_start': 'New night', 'executor:notify': 'Message sent',
+};
+const WHO = { glimmer: 'Glimmer', spark: 'Spark', policy: 'Policy gate', executor: 'Store', seller: 'You', voice: 'Voice' };
+
+function evidence(e) {
+  let ev = {}; try { ev = JSON.parse(e.evidence || '{}'); } catch {}
+  if (ev.text) return `“${esc(ev.text)}”`;
+  if (ev.tracking) return `No tracking scan for ${esc(ev.tracking.stalled_days)} days`;
+  const a = (ev.order || {}).address || {};
+  return esc([a.line1, a.line2].filter(Boolean).join(' '));
+}
+const langOf = e => { const n = e.acts.find(a => a.type === 'notify_customer'); return n ? LANG[n.args.language] || n.args.language : ''; };
+
+// which model did the work, what it cost, how many store writes were read back
+const proof = e => { const m = e.models.map(x => WHO[x.actor]).join(' + '), c = e.models.reduce((n, x) => n + (x.cost || 0), 0),
+  w = e.acts.filter(a => a.state === 'done').length;
+  return `<span class="proof">${m ? `<em>${m}</em> · $${c.toFixed(3)} · ` : ''}${w} write${w === 1 ? '' : 's'} checked</span>`; };
+const STAGE = [['Read', /^(glimmer|spark):(triage|verdict)|policy:fallback/], ['Plan', /^spark:(plan|act)/], ['Policy', /^policy:gate/], ['Write + verify', /^executor:/]];
+function live(s, ex) {
+  const w = ex.find(e => e.status === 'fixing'), last = s.ledger[0];
+  $('now').hidden = !s.busy || !last;
+  if ($('now').hidden) return;
+  const at = Math.max(0, STAGE.findIndex(([, re]) => re.test(last.actor + ':' + last.kind)));  // anything else: still reading
+  $('now').innerHTML = `<span class="pulse"></span><b>${w ? `Working on #${esc(w.order_id)}` : 'Reading new events'}</b>${w ? `<span>${esc(w.title)}</span>` : ''}
+    <ol>${STAGE.map(([n], i) => `<li class="${i < at ? 'done' : i === at ? 'on' : ''}">${n}</li>`).join('')}</ol>
+    ${w ? `<small>${esc(STEP[last.actor + ':' + last.kind] || last.kind)} · ${esc(last.detail)}</small>` : ''}`;
+}
+let typeFilter = null, lastState = '', S = null, seen = null;
+function render(s) {
+  S = s;
+  const ex = s.exceptions.map(e => ({ ...e, acts: e.actions.map(a => ({ ...a, args: JSON.parse(a.args) })) }));
+  const by = { ask: ex.filter(e => e.status === 'waiting'), fixed: ex.filter(e => e.status === 'fixed'), yours: ex.filter(e => e.status === 'escalated') };
+
+  $('night').disabled = s.busy; $('night').hidden = s.live.autopilot || s.live.sample;
+  $('try').hidden = s.live.sample;
+  $('mic').disabled = s.live.sample; $('mic').title = s.live.sample ? 'Voice needs a Meta API key on the server' : 'Hold to talk';
+  $('status').className = 'status' + (s.busy ? ' on' : ''); $('status').lastChild.textContent = s.busy ? 'Working' : 'Watching';
+
+  $('nAsk').textContent = by.ask.length; $('nFix').textContent = by.fixed.length; $('nYou').textContent = by.yours.length;
+
+  const counts = {}; ex.forEach(e => counts[e.type] = (counts[e.type] || 0) + 1);
+  $('types').innerHTML = ex.length ? '<span class="lbl">What broke</span>' + Object.entries(counts).sort((x, y) => y[1] - x[1])
+    .map(([k, v]) => `<button class="chip" data-type="${k}" aria-pressed="${typeFilter === k}">${TYPE[k] || k} <b>${v}</b></button>`).join('') : '';
+  $('types').insertAdjacentHTML('beforeend', `<span class="built">Meta ${['Muse Spark', s.live.glimmer && 'Glimmer', 'Voice Transcribe'].filter(Boolean).map(m => `<span>${m}</span>`).join('')}</span>`);
+  const live_ = ex.find(e => e.status === 'fixing'), focus = (ex.find(e => e.id === picked) || live_ || ex.find(e => e.models.length) || ex[0] || {}).id;
+  live(s, ex);
+  showRec(focus, live_ && live_.id === focus);
+
+  const pick = list => typeFilter ? list.filter(e => e.type === typeFilter) : list;
+  const top = e => `<div class="line1"><span class="tag">${TYPE[e.type] || e.type}</span><span>#${esc(e.order_id)}</span><span class="tm">${t(e.opened)}</span></div>`;
+  const open = e => `class="item${e.id === focus ? ' sel' : ''}" data-x="${e.id}" tabindex="0" role="button" aria-label="How Lookout handled #${esc(e.order_id)}"`;
+  $('colAsk').innerHTML = pick(by.ask).map(e => { const a = e.acts.find(x => x.state === 'pending');
+    return `<div ${open(e)}>${top(e)}<b>${esc(ASK[a.type](a.args))}</b><small>${esc(e.title)}${langOf(e) ? ' · ' + langOf(e) + ' customer' : ''}</small>
+      <span class="acts"><button class="pill" data-a="${a.id}" data-ok="1">Approve</button><button class="pill ghost" data-a="${a.id}" data-ok="0">Not now</button></span></div>`; }).join('')
+    || '<div class="empty">Nothing waits for you.</div>';
+  $('colFix').innerHTML = pick(by.fixed).map(e => `<div ${open(e)}>${top(e)}<span class="steps">${e.acts.filter(a => a.state === 'done').map(a => `<span>${esc(SHORT[a.type] ? SHORT[a.type](a.args) : a.type)}</span>`).join('<em>→</em>')}</span>${proof(e)}</div>`).join('')
+    || '<div class="empty">Nothing fixed yet.</div>';
+  $('colYou').innerHTML = pick(by.yours).map(e => `<div ${open(e)}>${top(e)}<b>${esc(e.title)}</b><small>${e.acts.some(a => a.state === 'blocked') ? 'The policy gate stopped a reply that made a health claim.' : 'Lookout could not finish this one.'}</small></div>`).join('')
+    || '<div class="empty">Nothing for you to handle.</div>';
+
+  // the assistant's thread
+  let lastTime = '';
+  const orderX = {}; ex.forEach(e => orderX[e.order_id] ??= e.id);
+  // no emoji in chat, and every known order number opens its audit sheet
+  const text = x => esc(String(x).replace(/\p{Extended_Pictographic}|\uFE0F|\u200D/gu, '').replace(/ {2,}/g, ' ').trim())
+    .replace(/(?<![\d,₩.])#?(\d{4})(?![\d,])/g, (m, id) => orderX[id] ? `<button class="oref" data-x="${orderX[id]}">#${id}</button>` : m);
+  $('thread').innerHTML = '<div class="in">' + (s.messages.map(m => {
+    const tm = t(m.at), stamp = tm !== lastTime ? `<div class="when">${tm}</div>` : ''; lastTime = tm;
+    if (m.direction.startsWith('in')) return `${stamp}<div class="msg me${m.direction === 'in_auto' ? ' auto' : ''}">${m.direction === 'in_auto' ? '<span class="who2">Seller (demo script)</span>' : ''}${text(m.text)}</div>`;
+    const ask = m.state === 'pending'
+      ? `<div class="q"><button data-a="${m.action_id}" data-ok="1">Approve</button><button class="no" data-a="${m.action_id}" data-ok="0">Not now</button></div>`
+      : m.action_id && m.state ? `<span class="done">${m.state === 'done' || m.state === 'approved' ? 'Approved' : m.state === 'rejected' ? 'Not now' : esc(m.state)}</span>` : '';
+    return `${stamp}<div class="msg lo"><div>${m.n ? `<b>${m.n}.</b> ` : ''}${text(m.text)}${ask}</div></div>`;
+  }).join('') || '<div class="msg lo"><div>Hi. I’ll watch your orders overnight and only ask you about money.</div></div>') + (s.thinking ? '<div class="typing" aria-label="Lookout is typing"><i></i><i></i><i></i></div>' : '') + '</div>';
+  $('thread').scrollTop = $('thread').scrollHeight;
+  const said = s.messages.filter(m => !m.direction.startsWith('in')).length;
+  if (seen === null || view() === 'chat') seen = said;
+  $('chat').lastChild.hidden = said <= seen; $('chat').lastChild.textContent = said - seen;
+}
+
+// redraw only when something changed, so buttons stay put under the cursor
+const poll = () => fetch('/api/state').then(r => r.text()).then(x => { if (x !== lastState) { lastState = x; render(JSON.parse(x)); } }).catch(() => {});
+setInterval(poll, 1200); poll();
+const redraw = () => S && render(S);
+
+const decide = e => { const b = e.target.closest('button[data-a]'); if (!b) return false;
+  b.disabled = true; post('/api/decide', { action_id: +b.dataset.a, ok: b.dataset.ok === '1' }).then(() => { lastState = ''; poll(); }); return true; };
+document.querySelector('.left').onclick = e => {
+  if (decide(e)) return;
+  const ch = e.target.closest('[data-type]'); if (ch) { typeFilter = typeFilter === ch.dataset.type ? null : ch.dataset.type; return redraw(); }
+  const r = e.target.closest('.item[data-x]'); if (r) select(+r.dataset.x);
+};
+document.querySelector('.left').onkeydown = e => { const r = e.target.closest('.item[data-x]'); if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(+r.dataset.x); } };
+$('thread').onclick = decide;
+// two screens: the order board and the chat; the hash keeps the back button working
+const view = () => location.hash === '#chat' ? 'chat' : 'board';
+const show = () => { const v = view(); document.body.dataset.view = v;
+  document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-current', b.dataset.view === v ? 'page' : 'false'));
+  if (v === 'chat') { redraw(); if (matchMedia('(pointer:fine)').matches) $('askText').focus(); } };
+document.querySelector('.seg').onclick = e => { const b = e.target.closest('button[data-view]'); if (b) location.hash = b.dataset.view === 'chat' ? 'chat' : ''; };
+addEventListener('hashchange', show); show();
+$('thread').addEventListener('click', e => { const o = e.target.closest('.oref'); if (o) openSheet(+o.dataset.x); });
+$('askText').oninput = () => $('send').disabled = !$('askText').value.trim();
+$('sheet').onclick = e => { if (e.target === $('sheet') || e.target.closest('.x')) $('sheet').close(); else if (decide(e)) $('sheet').close(); };
+$('chips').onclick = e => { const b = e.target.closest('button[data-say]'); if (b) say(b.dataset.say); };
+$('ask').onsubmit = e => { e.preventDefault(); const v = $('askText').value.trim(); if (v) { say(v); $('askText').value = ''; $('send').disabled = true; } };
+$('night').onclick = () => post('/api/night', {}).then(() => { lastState = ''; poll(); });
+
+$('activity').onclick = () => {
+  const rows = (S ? S.ledger : []).map(l => `<div class="act"><span class="tm">${t(l.at)}</span><span class="who ${l.actor}">${WHO[l.actor] || l.actor}</span>
+    <span class="d">${esc(STEP[l.actor + ':' + l.kind] || l.kind)}<small>${esc(l.detail)}</small></span><span class="c">${l.tokens_in ? (l.tokens_in + l.tokens_out).toLocaleString() + ' tok · ' : ''}${l.cost ? '$' + l.cost.toFixed(4) : ''}</span></div>`).join('');
+  const cost = S ? S.brief.model_cost_usd : 0;
+  $('sheetBody').innerHTML = `<button class="x" aria-label="Close">✕</button><h2>Activity</h2>
+    <div class="meta"><span>${S ? S.ledger.length : 0} entries</span><span>model cost today $${cost.toFixed(2)} of $${S ? S.live.cap.toFixed(2) : '1.00'}</span></div>
+    <div class="actlist">${rows || '<div class="empty">Nothing yet.</div>'}</div>`;
+  $('sheet').showModal();
+};
+let picked = null, recKey = '';
+const wide = () => matchMedia('(min-width:1001px) and (min-height:641px)').matches;
+const select = id => { if (!wide()) return openSheet(id); picked = id; redraw(); };
+async function showRec(id, isLive) {
+  if (!wide() || !id) return;
+  const d = await fetch('/api/exceptions/' + id).then(r => r.json()), k = JSON.stringify(d);
+  $('recHint').textContent = picked === id ? '' : isLive ? 'Following the live order' : 'Latest order · click any card';
+  if (k !== recKey) { recKey = k; $('recBody').innerHTML = recordHTML(d); }
+}
+async function openSheet(id) {
+  $('sheetBody').innerHTML = '<button class="x" aria-label="Close">✕</button>' + recordHTML(await fetch('/api/exceptions/' + id).then(r => r.json()));
+  $('sheet').showModal();
+}
+function recordHTML(d) {
+  const e = d.exception;
+  const tl = d.audit.map(l => {
+    const meta = [l.tokens_in ? `${l.tokens_in.toLocaleString()} in / ${l.tokens_out.toLocaleString()} out tokens` : '', l.cost ? '$' + l.cost.toFixed(4) : '', l.ms ? l.ms + ' ms' : ''].filter(Boolean).join(' · ');
+    return `<li><span class="t">${t(l.at)}</span><span class="dot ${l.actor}"></span><span><b>${STEP[l.actor + ':' + l.kind] || l.actor + ' · ' + l.kind}</b><span class="d">${esc(l.detail)}</span>${meta ? `<code>${meta}</code>` : ''}</span></li>`;
+  }).join('');
+  const wr = d.actions.map(a => { const args = JSON.parse(a.args);
+    return `<div><span><b>${esc((DID[a.type] || (() => a.type))(args))}</b> <span class="st ${a.state}">${esc(a.state)}</span></span>
+      ${args.message ? `<span>“${esc(args.message)}”</span>` : ''}
+      ${a.state === 'pending' ? `<span class="acts"><button class="pill" data-a="${a.id}" data-ok="1">Approve</button><button class="pill ghost" data-a="${a.id}" data-ok="0">Not now</button></span>` : ''}
+      <code>policy: ${esc(a.decision)} · key ${esc(a.key)}${a.decided_by ? ' · decided by ' + esc(a.decided_by) : ''}</code></div>`; }).join('');
+  return `<div class="meta"><span class="tag">${TYPE[e.type] || e.type}</span><span>#${esc(e.order_id)}</span><span class="label ${e.status}">${LABEL[e.status] || e.status}</span><span>opened ${t(e.opened)}</span></div>
+    <h2>${esc(e.title)}</h2>
+    ${evidence(e) ? `<blockquote>${evidence(e)}</blockquote>` : ''}
+    ${e.story ? `<p style="margin:0">${esc(e.story)}</p>` : ''}
+    <h4>Store writes</h4><div class="wr">${wr || '<div>No writes.</div>'}</div>
+    <h4>Audit trail</h4><ol class="tl">${tl || '<li><span></span><span></span><span class="d">No entries.</span></li>'}</ol>`;
+}
+
+const PRESETS = {
+  unit: { kind: 'order_created', order: { customer: { name: '정*우', lang: 'ko' }, address: { line1: '서울 강서구 마곡로 21 마곡엠밸리아파트', line2: '', city: '서울', zip: '07788' }, items: [{ sku: 'SOCK-M', title: 'Merino socks M', qty: 2 }], total: 38000 } },
+  stock: { kind: 'order_created', note: 'Ships from Seoul; Seoul stock of BEANIE-M is 0, Busan has some.', order: { customer: { name: 'Lena K.', lang: 'de' }, address: { line1: 'Torstraße 50', line2: 'Wohnung 3', city: 'Berlin', zip: '10119' }, items: [{ sku: 'BEANIE-M', title: 'Merino beanie M', qty: 1 }], total: 32000 } },
+  cancel: { kind: 'customer_message', order_id: '1094', from: 'Noah P.', text: 'Please cancel order 1094 and refund me. It has not shipped yet, right?' },
+};
+document.querySelectorAll('[data-preset]').forEach(b => b.onclick = e => { e.stopPropagation(); post('/api/events', PRESETS[b.dataset.preset]).then(() => { lastState = ''; poll(); }); });
+
+// Hold to talk: the server turns the recording into 16 kHz WAV for Voice Transcribe.
+let rec, chunks = [];
+const start = async () => {
+  try { const st = await navigator.mediaDevices.getUserMedia({ audio: true }); rec = new MediaRecorder(st); chunks = [];
+    rec.ondataavailable = e => chunks.push(e.data); rec.onstop = () => { st.getTracks().forEach(x => x.stop());
+      const f = new FormData(); f.append('file', new Blob(chunks, { type: rec.mimeType }), 'voice.webm'); fetch('/api/boss/audio', { method: 'POST', body: f }).then(poll); };
+    rec.start(); $('mic').classList.add('rec'); }
+  catch { note('The microphone is blocked. Type instead.'); }
+};
+const stop = () => { if (rec && rec.state === 'recording') { rec.stop(); $('mic').classList.remove('rec'); } };
+$('mic').addEventListener('pointerdown', start); $('mic').addEventListener('pointerup', stop); $('mic').addEventListener('pointerleave', stop);
+</script>
+</body>
+</html>

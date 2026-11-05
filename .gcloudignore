@@ -1,0 +1,10 @@
+# Cloud Run build context: the Dockerfile copies only app/ and web/
+.git
+.venv/
+.env
+.env.*
+*.db
+demo/
+docs/
+tests/
+__pycache__/

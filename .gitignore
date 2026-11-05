@@ -1,0 +1,25 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# internal docs, not for the public repo
+meta-hackathon-official.pdf
+
+.DS_Store
+node_modules
+__pycache__/
+.venv/
+
+# internal, not for the public repo
+docs/hackathon/
+docs/concept/
+docs/applications-*.md
+
+# demo video: rendered outputs are rebuilt from demo/video/
+demo/video/shots/
+demo/video/out/
+*.mp4
+
+# local service data
+lookout.db

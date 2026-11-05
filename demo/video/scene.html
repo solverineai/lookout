@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lookout demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600&display=block">
+<style>
+  /* 3-minute demo: a camera over real screens captured from the running service (capture.mjs), Apple-light like the product */
+  :root { --bg:#F5F5F7; --card:#FFFFFF; --ink:#1D1D1F; --muted:#1D1D1F; --hair:#D2D2D7; --blue:#0071E3; --green:#1A7F37; --copper:#B64400; --red:#D70015;
+    --sans:"Inter","Noto Sans KR",-apple-system,sans-serif; }
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}
+  body{display:grid;place-items:center}
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--sans);flex:none;transform-origin:center;letter-spacing:-.01em}
+  .abs{position:absolute}
+  #cam{left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;opacity:0}
+  #cam .scr{position:absolute;left:0;top:0;width:1920px;height:1080px;opacity:0;border-radius:10px}
+  #cam .frame{position:absolute;inset:0;border-radius:10px;box-shadow:0 30px 90px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.06)}
+  #hl{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:visible}
+  #hl rect{fill:none;stroke-width:5;opacity:0}
+  .cap{left:0;right:0;margin-inline:auto;width:fit-content;bottom:56px;max-width:1500px;text-align:center;padding:20px 34px 22px;border-radius:26px;background:rgba(255,255,255,.96);box-shadow:0 18px 50px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.05);opacity:0}
+  .cap .chip{font-weight:700;font-size:28px;letter-spacing:.02em}
+  .cap .h{font-size:52px;font-weight:600;line-height:1.22;margin-top:2px;text-wrap:balance}
+  .cap .h b{font-weight:700}
+  .o{opacity:0}
+  .big{font-weight:700;letter-spacing:-.03em;line-height:1.05}
+  .body{font-size:40px;line-height:1.35}
+  .num .v{font-weight:700;font-size:140px;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+  .num .s{font-size:40px;font-weight:600;color:var(--ink);margin-top:14px}
+  .model{width:520px}
+  .model .k{font-weight:700;font-size:64px;letter-spacing:-.03em}
+  .model .d{font-size:38px;font-weight:500;color:var(--ink);margin-top:14px;line-height:1.3}
+  #disc{left:0;right:0;top:0;padding:18px 80px;text-align:center;font-size:30px;font-weight:500;color:var(--muted);background:rgba(245,245,247,.95);z-index:5;opacity:0}
+  .phone{top:70px;width:400px;height:866px;border-radius:56px;background:#000;padding:14px;box-sizing:content-box;box-shadow:0 30px 90px rgba(0,0,0,.18)}
+  .phone img{width:400px;height:866px;border-radius:44px;display:block}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="disc" class="abs">Built during the Meta AI Developer Hackathon. Stores, customers and orders are synthetic; every model call shown is real.</div>
+  <div id="t1" class="abs o big" style="left:0;right:0;top:430px;text-align:center;font-size:110px;color:var(--ink)">3:00 AM, Seoul.</div>
+  <div id="t2" class="abs o big" style="left:0;right:0;top:430px;text-align:center;font-size:96px">One seller. Customers in 6 countries.</div>
+  <div id="t3" class="abs o big" style="left:0;right:0;top:430px;text-align:center;font-size:110px"><span style="color:var(--red)">12 orders</span> broke overnight.</div>
+  <div id="t4" class="abs o big" style="left:0;right:0;top:430px;text-align:center;font-size:96px">Nobody was hired to fix them.</div>
+  <div id="cam" class="abs"><div class="frame"></div><svg id="hl" viewBox="0 0 1920 1080"></svg></div>
+
+  <div id="p1" class="abs o phone" style="left:520px"><img src="shots/phone_board.png"></div>
+  <div id="p2" class="abs o phone" style="left:1000px"><img src="shots/phone_chat.png"></div>
+
+  <div id="c1" class="abs o model" style="left:150px;top:330px"><div class="k" style="color:var(--blue)">Muse Spark</div><div class="d">Reads each broken order, plans the fix, calls the store tools.</div></div>
+  <div id="c2" class="abs o model" style="left:700px;top:330px"><div class="k" style="color:var(--green)">Policy gate</div><div class="d">Money waits for the seller. Health claims never leave.</div></div>
+  <div id="c3" class="abs o model" style="left:1250px;top:330px"><div class="k" style="color:var(--copper)">Read back</div><div class="d">Every store write is checked, keyed, and runs once.</div></div>
+
+  <div id="s0" class="abs o" style="left:0;right:0;top:150px;text-align:center;font-size:54px;font-weight:600;color:var(--ink)">At the cost we measured, a store that grows to</div>
+  <div id="n1" class="abs o num" style="left:150px;top:330px;width:520px;text-align:center"><div class="v">1,000</div><div class="s">broken orders a month</div></div>
+  <div id="n2" class="abs o num" style="left:700px;top:330px;width:520px;text-align:center"><div class="v" style="color:var(--blue)">≈ $20</div><div class="s">of Muse Spark time</div></div>
+  <div id="n3" class="abs o num" style="left:1250px;top:330px;width:520px;text-align:center"><div class="v" style="color:var(--green)">0</div><div class="s">new hires</div></div>
+  <div id="s1" class="abs o" style="left:0;right:0;top:680px;text-align:center;font-size:40px;font-weight:500;color:var(--ink)">$0.02 per fixed order, from the ledger of every real Spark call</div>
+  <div id="g1" class="abs o big" style="left:0;right:0;top:300px;text-align:center;font-size:150px">Grow orders,</div>
+  <div id="g2" class="abs o big" style="left:0;right:0;top:470px;text-align:center;font-size:150px;color:var(--blue)">not headcount.</div>
+  <div id="brand" class="abs o" style="left:0;right:0;top:710px;text-align:center;font-size:64px;font-weight:700">Lookout</div>
+  <div id="cta" class="abs o" style="left:0;right:0;top:800px;text-align:center;font-size:40px;font-weight:500;color:var(--ink)">Built on Meta Muse Spark · github.com/solverineai/lookout</div>
+</div>
+
+<script src="shots/rects.js"></script>
+<script>
+const W = 1920, H = 1080, FPS = 30, DURATION = 180;
+const EASE = { out:'cubic-bezier(0.22,1,0.36,1)', inOut:'cubic-bezier(0.65,0,0.35,1)' };
+const $ = s => document.querySelector(s);
+const EVENTS = [], ANIMS = [];
+const R = window.R; // panel rectangles per screenshot (1920x1080 space), written by capture.mjs
+// fill 'forwards' everywhere so a later animation never paints its first keyframe before it starts
+function anim(el, kf, at, dur, easing = EASE.out, sound, fill = 'forwards') {
+  const a = (typeof el === 'string' ? $(el) : el).animate(kf, { delay: at * 1000, duration: dur * 1000, easing, fill });
+  a.pause(); ANIMS.push(a);
+  if (sound) EVENTS.push({ t: Math.round(at * FPS) / FPS, ...sound });
+  return a;
+}
+const show = (el, at, dur = .7, dy = 30, sound) => anim(el, [{ opacity: 0, transform: `translateY(${dy}px)` }, { opacity: 1, transform: 'none' }], at, dur, EASE.out, sound);
+const hide = (el, at, dur = .5) => anim(el, [{ opacity: 1 }, { opacity: 0 }], at, dur, EASE.inOut);
+const chord = (t, n) => EVENTS.push({ t, type: 'chord', chord: n });
+
+// ---- camera over the captured screens
+let camT = null;
+function camTo(rect, at, dur = 1.4, pad = 40) {
+  let s, tx, ty;
+  if (rect === 'full') { s = .8; tx = (W - W * s) / 2; ty = 36; }
+  else {
+    const [x, y, w, h] = rect, AH = 830; // keep the subject above the caption band
+    s = Math.min(2.2, W / (w + 2 * pad), AH / (h + 2 * pad));
+    tx = W / 2 - (x + w / 2) * s; ty = AH / 2 + 10 - (y + h / 2) * s;
+    tx = Math.min(80, Math.max(W - W * s - 80, tx)); ty = Math.min(40, Math.max(H - H * s - 40, ty));
+  }
+  const to = `translate(${tx}px,${ty}px) scale(${s})`;
+  if (camT) anim('#cam', [{ transform: camT }, { transform: to }], at, dur, EASE.inOut, { type: 'whoosh', gain: -8 });
+  else anim('#cam', [{ transform: to }, { transform: to }], 0, .01, EASE.out, undefined, 'both');
+  camT = to;
+}
+function shot(name, at, dur = .6) {
+  const img = document.createElement('img'); img.className = 'scr'; img.src = `shots/${name}.png`;
+  $('#cam').insertBefore(img, $('#hl'));
+  anim(img, [{ opacity: 0 }, { opacity: 1 }], at, dur, EASE.inOut);
+}
+function box(rect, at, color, until, sound = { type: 'drop', degree: 2 }) {
+  const [x, y, w, h] = rect, r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  Object.entries({ x: x - 6, y: y - 6, width: w + 12, height: h + 12, rx: 22, pathLength: 1, 'stroke-dasharray': 1, stroke: color }).forEach(([k, v]) => r.setAttribute(k, v));
+  $('#hl').append(r);
+  anim(r, [{ strokeDashoffset: 1, opacity: 0 }, { opacity: 1, offset: .01 }, { strokeDashoffset: 0, opacity: 1 }], at, .8, EASE.inOut, sound);
+  anim(r, [{ opacity: 1 }, { opacity: 0 }], until, .4, EASE.inOut);
+}
+const COL = { find: 'var(--copper)', fix: 'var(--green)', ask: 'var(--copper)', block: 'var(--red)', model: 'var(--blue)', '': 'var(--muted)' };
+const LBL = { find: 'Found', fix: 'Fixed', ask: 'Asks the seller', block: 'Blocked', model: 'Meta Muse Spark', '': 'Lookout' };
+function say(step, html, at, until, sound = { type: 'kalimba', degree: 1 }) {
+  const d = document.createElement('div'); d.className = 'abs cap';
+  d.innerHTML = `<div class="chip" style="color:${COL[step]}">${LBL[step]}</div><div class="h">${html}</div>`;
+  $('#stage').append(d);
+  show(d, at, .6, 24, sound); hide(d, until);
+}
+const cut = (name, rect, at, dur = 1.3, pad = 40) => { shot(name, at); camTo(rect, at, dur, pad); };
+const crop = (r, h) => [r[0], r[1], r[2], h];
+
+// ---- 1. the hook (0–10)
+chord(0, 0);
+anim('#disc', [{ opacity: 1 }, { opacity: 1 }], 0, .01, EASE.out, undefined, 'both');
+hide('#disc', 8.4);
+show('#t1', 0.3, .8, 30, { type: 'sub' }); hide('#t1', 2.3, .3);
+show('#t2', 2.5, .7, 30, { type: 'tick' }); hide('#t2', 4.5, .3);
+show('#t3', 4.7, .6, 30, { type: 'sub', gain: 2 }); hide('#t3', 6.8, .3);
+show('#t4', 7.0, .7, 30, { type: 'tick' }); hide('#t4', 8.7, .3);
+shot('board', 8.8, .01); camTo('full', 0);
+anim('#cam', [{ opacity: 0, transform: camT + ' translateY(40px)' }, { opacity: 1, transform: camT }], 8.9, 1.1, EASE.out, { type: 'swell', degree: 0 });
+
+// ---- 2. the board after one night (10–34)
+chord(10, 1);
+say('', '<b>Lookout</b> did. Here is the night, at a glance.', 10.2, 15.0, { type: 'harp', degree: 2 });
+camTo(R.board.fix, 15.2);
+box(R.board.fix, 16.0, COL.fix, 21.4);
+say('fix', '<b>8 fixed on its own.</b> Each one shows the steps it took.', 15.8, 21.6, { type: 'bell', degree: 3 });
+camTo(R.board.ask, 21.8);
+box(R.board.ask, 22.6, COL.ask, 27.8);
+say('ask', '<b>3 need the seller.</b> Every one of them is money.', 22.4, 28.0, { type: 'bell', degree: 1 });
+camTo([R.board.you[0], R.board.you[1], R.board.you[2], R.board.you[3] + 260], 28.2);
+box(crop(R.board.you, 200), 29.0, COL.block, 33.6);
+say('block', 'A reply claiming the honey boosts immunity was <b>stopped</b>.', 28.8, 33.8, { type: 'pluck', degree: 0 });
+
+// ---- 3. a judge breaks an order, live (34–66)
+chord(34, 2);
+camTo('full', 34.0);
+box(R.board.try, 34.8, COL.model, 39.4);
+say('', 'Now break one yourself: <b>an apartment with no unit number.</b>', 34.6, 39.6);
+cut('live_0', R.live_0.now, 39.8, 1.3, 30);
+box(R.live_0.now, 40.6, COL.model, 45.4);
+say('find', 'Lookout picks it up within seconds.', 40.4, 45.6, { type: 'drop', degree: 3 });
+cut('live_1', 'full', 45.8);
+box(R.live_0.now, 46.6, COL.model, 51.8);
+box(R.live_0.rec, 47.4, COL.model, 51.8, { type: 'drop', degree: 1 });
+say('model', '<b>Muse Spark</b> plans the fix. The record beside it fills in live.', 46.2, 52.0);
+shot('live_3', 52.2);
+say('fix', 'Each change is written to the store, then <b>read back</b>.', 52.6, 58.0, { type: 'bell', degree: 2 });
+cut('after', R.after.firstFix, 58.2, 1.3, 30);
+box(R.after.firstFix, 59.0, COL.fix, 65.6);
+say('fix', 'Parcel held, customer asked in Korean. <b>About two cents.</b>', 58.8, 65.8, { type: 'bell', degree: 4 });
+
+// ---- 4. the record is always open: no clicks, no pop-ups (66–96)
+chord(66, 3);
+cut('rec_live', R.rec_live.rec, 66.0, 1.3, 20);
+say('', 'The record is <b>always open</b> beside the lists. Nothing to click.', 66.6, 73.0);
+shot('rec_live_audit', 73.2);
+say('model', 'Every model call: <b>tokens, cost, time.</b>', 73.6, 80.6);
+cut('rec_fix', 'full', 80.8);
+box(R.rec_fix.sel, 81.6, COL.fix, 87.6);
+box(R.rec_fix.rec, 82.2, COL.fix, 87.6, { type: 'drop', degree: 1 });
+say('fix', 'Every write has a key, so <b>nothing runs twice.</b>', 81.2, 88.0, { type: 'pluck', degree: 2 });
+shot('rec_block', 88.2);
+box(R.rec_block.sel, 88.8, COL.block, 95.4);
+say('block', 'The policy gate decides what may leave the store.', 88.6, 95.6, { type: 'pluck', degree: 0 });
+
+// ---- 5. the seller talks to it, in Korean (96–124)
+chord(96, 1);
+cut('chat0', 'full', 96.0);
+say('ask', 'Chat is its own screen. The seller just <b>asks</b>.', 96.6, 102.8);
+cut('chat_typing', [400, 560, 1120, 330], 103.0, 1.3, 20);
+EVENTS.push({ t: 103.6, type: 'typing' });
+say('ask', '<b>“Approve only the refund for #1055.”</b>', 103.4, 109.6, { type: 'drop', degree: 4 });
+shot('chat_done', 109.8);
+say('model', 'Spark approves exactly that one. Nothing else moves.', 110.2, 116.4, { type: 'bell', degree: 3 });
+cut('chat_link', R.chat_link.sheet, 116.6, 1.3, 20);
+say('', 'Order numbers in the chat open their record.', 117.2, 123.6);
+anim('#cam', [{ opacity: 1 }, { opacity: 0, translate: '0 -60px' }], 123.8, .8, EASE.inOut, { type: 'swell', degree: 0 });
+
+// ---- 6. on the phone (124–146)
+chord(124.4, 2);
+show('#p1', 124.6, 1.0, 80, { type: 'kalimba', degree: 1 });
+show('#p2', 125.2, 1.0, 80, { type: 'kalimba', degree: 3 });
+say('', 'The same, on the seller’s phone.', 126.0, 133.6);
+say('ask', 'Approve from bed. <b>Everything else is already done.</b>', 134.0, 145.0, { type: 'bell', degree: 2 });
+['#p1', '#p2'].forEach((s, i) => anim(s, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-60px)' }], 145.2 + i * .1, .7, EASE.inOut));
+
+// ---- 7. how it stays safe (146–156)
+chord(146.2, 3);
+['#c1', '#c2', '#c3'].forEach((s, i) => show(s, 146.4 + i * .8, .8, 60, { type: 'kalimba', degree: 2 + i }));
+['#c1', '#c2', '#c3'].forEach((s, i) => anim(s, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-60px)' }], 155.2 + i * .05, .6, EASE.inOut));
+
+// ---- 8. what it means at scale (156–168)
+chord(156, 1);
+show('#s0', 156.2, .7, 20, { type: 'tick' });
+['#n1', '#n2', '#n3'].forEach((s, i) => show(s, 157.4 + i * 1.6, .8, 60, { type: i === 2 ? 'sparkle' : 'clink', degree: i }));
+show('#s1', 162.6, .7, 20);
+['#s0', '#n1', '#n2', '#n3', '#s1'].forEach(s => hide(s, 167.4, .5));
+
+// ---- 9. the line (168–180)
+chord(168, 0);
+show('#g1', 168.2, .9, 50, { type: 'sub' });
+show('#g2', 169.4, .9, 50, { type: 'sparkle', degree: 4 });
+show('#brand', 171.4, .7, 30, { type: 'tick' });
+show('#cta', 172.0, .7, 20);
+
+function renderFrame(t) { for (const a of ANIMS) a.currentTime = t * 1000; }
+function fit() { const s = Math.min(innerWidth / W, innerHeight / H, 1); $('#stage').style.transform = `scale(${s})`; $('#stage').style.margin = `${(H * s - H) / 2}px ${(W * s - W) / 2}px`; }
+addEventListener('resize', fit); fit();
+const RENDER = new URLSearchParams(location.search).has('render');
+const ready = Promise.all([document.fonts.ready, ...[...document.images].map(i => i.decode().catch(() => {}))]).then(() => { renderFrame(0); return true; });
+if (!RENDER) ready.then(() => { const t0 = performance.now(); const tick = now => { renderFrame(((now - t0) / 1000) % DURATION); requestAnimationFrame(tick); }; requestAnimationFrame(tick); });
+window.MG = { mode: 'dom', width: W, height: H, fps: FPS, duration: DURATION, events: EVENTS.sort((a, b) => a.t - b.t), scenes: [[0, DURATION]], setMotionBlur() {}, renderFrame, ready };
+</script>
+</body>
+</html>
